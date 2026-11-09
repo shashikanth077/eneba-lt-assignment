@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="vendor/autoload.php" colors="true" cacheDirectory=".phpunit.cache">
+    <testsuites>
+        <testsuite name="unit"><directory>tests</directory></testsuite>
+    </testsuites>
+    <php>
+        <!-- Test-only values. Real DB credentials still come from the environment / .env. -->
+        <env name="APP_DEBUG" value="false" force="true"/>
+        <env name="JWT_SECRET" value="phpunit-secret-phpunit-secret-phpunit-secret" force="true"/>
+        <env name="COOKIE_SECURE" value="true" force="true"/>
+        <env name="APP_URL" value="http://localhost:5173" force="true"/>
+        <env name="TRUST_PROXY" value="false" force="true"/>
+        <env name="CACHE_DRIVER" value="none" force="true"/>
+        <env name="KEY_ENCRYPTION_KEY" value="ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZC0=" force="true"/>
+    </php>
+</phpunit>
