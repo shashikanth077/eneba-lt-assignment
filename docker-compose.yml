@@ -53,6 +53,12 @@ services:
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     environment:
       VITE_API_PROXY_TARGET: http://php
+      # Browser-side settings (public by design). Empty = Stripe checkout shows "not set up" and no emails are sent.
+      VITE_STRIPE_PUBLISHABLE_KEY: ${VITE_STRIPE_PUBLISHABLE_KEY:-}
+      VITE_EMAILJS_SERVICE_ID: ${VITE_EMAILJS_SERVICE_ID:-}
+      VITE_EMAILJS_PUBLIC_KEY: ${VITE_EMAILJS_PUBLIC_KEY:-}
+      VITE_EMAILJS_WELCOME_TEMPLATE_ID: ${VITE_EMAILJS_WELCOME_TEMPLATE_ID:-}
+      VITE_EMAILJS_ORDER_TEMPLATE_ID: ${VITE_EMAILJS_ORDER_TEMPLATE_ID:-}
     ports:
       - "5173:5173"
     volumes:

@@ -66,6 +66,12 @@ export const routes: RouteObject[] = [
               Component: (await import('../features/orders/AccountOrdersPage')).AccountOrdersPage,
             }),
           },
+          {
+            path: 'account/orders/:id',
+            lazy: async () => ({
+              Component: (await import('../features/orders/OrderPage')).OrderPage,
+            }),
+          },
         ],
       },
       {

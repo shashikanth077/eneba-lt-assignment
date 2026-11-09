@@ -171,8 +171,9 @@ describe('ProtectedRoute: redirect to login, then back', () => {
     const user = userEvent.setup();
 
     await user.type(await screen.findByLabelText(/display name/i), 'Ada');
-    await user.type(screen.getByLabelText(/email/i), 'nope');
-    await user.type(screen.getByLabelText(/password/i), 'short');
+    // Passes the browser's own checks, so the request is sent and the SERVER's field errors are what appears.
+    await user.type(screen.getByLabelText(/email/i), 'ada@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'long-enough-password');
     await user.click(screen.getByRole('button', { name: 'Create account' }));
 
     expect(await screen.findByText('Must be a valid email address')).toBeInTheDocument();

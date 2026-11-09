@@ -1,7 +1,7 @@
 # Frontend app shell
 
 React 19 + TypeScript (strict) + Vite, Redux Toolkit with RTK Query, MUI 9 themed from `docs/DESIGN_TOKENS.md`, React Router 7 (data router).
-The shell is the frame every page lives in; the screens inside it (cart and checkout) are placeholders until their own steps; home, store, search and product are built.
+The shell is the frame every page lives in; the screens inside it are all built; see the sections below.
 
 ## Layout (what is on every page)
 ```
@@ -22,7 +22,7 @@ Checked at 375 px and 1280 px: no horizontal overflow on any route, and the sugg
 | `/search?q=` | search results with did-you-mean | public |
 | `/product/:slug` | product page with offers table | public |
 | `/login`, `/register` | working forms; honour `?next=` | public (signed-in users are sent on) |
-| `/cart`, `/checkout`, `/account/orders` | cart summary / placeholder / order list | **signed-in only** (`ProtectedRoute`) |
+| `/cart`, `/checkout`, `/account/orders`, `/account/orders/:id` | cart / payment / order list / order with keys | **signed-in only** (`ProtectedRoute`) |
 | `*` | not found | public |
 
 Every screen is its own lazily loaded chunk. Adding a route is one line in `src/app/router.tsx`.
@@ -106,6 +106,35 @@ then the offers table.
 - *Add to cart:* signed in -> `POST /api/cart {offerId}` (server-side cart; the same offer again raises the quantity), the `Cart` tag is invalidated so the header badge refetches, the row shows "In your cart: n" from the server's cart, errors
   (e.g. 409 insufficient stock) appear in the row. Signed out -> `/login?next=<this page>` and back; the item is **not** added automatically after signing in (the person clicks again).
 
+## Sign-up, cart, checkout, orders (`features/auth`, `cart`, `checkout`, `orders`, `email`)
+**Forms** (`/login`, `/register`): client checks in `validation.ts` (email shape, name 2-50, password 8+) show a field's message after the field was left or the form submitted, and block the request; the server validates again
+and its answers are shown: field errors (422) under the field, everything else (wrong password, `email_taken`, throttling with "try again in N min") in an alert. A blank helper line is reserved under the email and password
+fields: without it the message appearing on blur pushed the "Create an account" link down under the pointer and the click was lost (found by the shell e2e script).
+
+**Cart** (`/cart`): lines with seller, unit price, quantity stepper (1 to min(5, stock)), remove, line totals, and the **server's** total. Every change is a PATCH/DELETE; the server answers with the recomputed cart
+(prices and stock read live), and the header badge follows. Server-flagged lines (inactive, out of stock) show their message and block "Go to checkout".
+
+**Checkout** (`/checkout`): the summary is the server's cart. Visiting holds no stock; "Continue to payment" calls `POST /api/checkout` **with no body** (the server builds order and amount from its cart), which reserves the keys
+and creates the PaymentIntent. Then Stripe's Payment Element (`@stripe/react-stripe-js`, dark theme from the tokens) renders for the returned `clientSecret`; the Pay button shows the amount **the server** put on the intent.
+`confirmPayment(redirect: 'if_required')`: a declined card shows Stripe's message and the form stays for another try; success (or a redirect-based method returning to `return_url`) goes to the order page. Refusals before payment
+are explained: `409 out_of_stock` names the items ("you want 2, 1 left"), `503` says payments are unavailable. Only a Stripe **test** publishable key (`pk_test_...`) is accepted; a live key is refused in `stripe.ts`.
+The browser's "payment succeeded" never unlocks anything: the order page asks the server.
+
+**Order page** (`/account/orders/:id`, protected): while the order is `pending` (card taken, webhook not here yet) it says "waiting for confirmation" and asks the server every 2 s, flips to the keys by itself when the
+webhook marks it paid, and after 2 minutes stops polling and offers "Check again". Other states (failed, expired, canceled, refund needed, refunded) each say what happened. Someone else's order is "not found" (the API answers 404).
+Keys render **only here**: hidden behind "Reveal key" per key (Hide, and a Copy button using the Clipboard API with a visible fallback message), not in the list, the URL, storage or any email, and the order query has
+`keepUnusedDataFor: 0` so the keys leave the browser's memory when the page closes. When an order becomes paid the `Cart` and `Orders` caches are invalidated (the bought lines left the cart server-side).
+**Order list** (`/account/orders`): newest first, paginated in the address, each row links to its order.
+
+**Emails (EmailJS, browser-side, public key, docs/ARCHITECTURE.md)**: a welcome email right after a successful registration (sent to the address the *server* stored), and a receipt when an order this browser paid for
+becomes paid. The receipt params are copied field by field (`to_email, to_name, order_id, order_items, order_total`): keys cannot be included (a test asserts none of the keys appears anywhere in what is sent).
+"This browser paid" is a localStorage flag set when the buyer presses Pay and consumed once: opening an old order, or reloading, never sends another email. Limits, stated plainly: it is sent from the browser, so
+it is not guaranteed (closing the tab before the order turns paid, or blocked storage, means no email; the on-screen confirmation is the source of truth) and a technical user could trigger extra receipts to their own address.
+If EmailJS is not configured (`VITE_EMAILJS_*`), or fails, the app carries on; failures are logged, never shown as errors. Template variables: welcome `{{to_email}} {{to_name}}`; order `{{to_email}} {{to_name}} {{order_id}} {{order_items}} {{order_total}}`.
+
+**Configuration** (frontend/.env or docker-compose from the root .env): `VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...`, `VITE_EMAILJS_SERVICE_ID`, `VITE_EMAILJS_PUBLIC_KEY`, `VITE_EMAILJS_WELCOME_TEMPLATE_ID`, `VITE_EMAILJS_ORDER_TEMPLATE_ID`.
+Backend keeps `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`; locally run `stripe listen --forward-to localhost:8080/api/webhooks/stripe` so the webhook reaches the API. Without the webhook the order stays "waiting for confirmation".
+
 ## Shared loading / error / empty states
 `LoadingState`, `ErrorState` (readable message + optional retry), `EmptyState` (message + action) and `QueryBoundary`, which wraps any RTK Query result so a screen only writes its happy path
 (stale data keeps showing during a refetch; an error over existing data does not replace it).
@@ -113,18 +142,19 @@ then the offers table.
 ## Testing
 ```bash
 cd frontend
-npm test                      # Vitest + Testing Library: 230 tests (redirect safety, errors, auth slice, protected-route round trips, search box, header, state components, homepage blocks, store, search and product pages, offer sorting, did-you-mean)
+npm test                      # Vitest + Testing Library: 291 tests (redirect safety, errors, auth slice, protected-route round trips, search box, header, state components, homepage blocks, store, search, product, cart, checkout, order and auth pages, EmailJS, offer sorting, did-you-mean)
 npm run lint && npm run typecheck && npm run build
 NODE_PATH=$(npm root -g) node e2e/shell.e2e.cjs      # 36 checks in a real browser against the real API (needs the stack running and Playwright installed)
 SQL_CMD="mysql -uroot keymart" NODE_PATH=$(npm root -g) node e2e/home.e2e.cjs   # 20 checks: edits home_blocks/banners in the database, watches the page change, restores the rows
 BASE_URL=http://localhost:5173 NODE_PATH=$(npm root -g) node e2e/store.e2e.cjs     # 22 checks: reload/second tab parity, Back/Forward, debounced slider (one request), pages, drawer, overflow
 SQL_CMD="mysql -uroot keymart" NODE_PATH=$(npm root -g) node e2e/product.e2e.cjs   # 21 checks: typo -> did you mean, offers table, sorting, sign-up, two offers -> badge 2, single/no offers via SQL (restored)
+SQL_CMD=... NODE_PATH=$(npm root -g) node e2e/commerce.e2e.cjs   # 27 checks: sign-up, cart editing, pending order -> signed webhook -> keys appear by themselves, reveal/copy (API started with STRIPE_WEBHOOK_SECRET=whsec_e2e)
 ```
 Component tests run the real routes, store and components against an in-memory fake of the API (`src/test/fakeApi.ts`); the browser script uses the real backend and database.
 Use `http://localhost:5173` (not 127.0.0.1): the backend's CSRF origin allow-list names `localhost`, and it correctly rejects other origins.
 
 ## Known limits
-- Cart editing and checkout are placeholders (cart and orders show real data through the shared states).
+- The real card payment (Stripe.js + a Stripe account) could not be exercised in the development sandbox; see docs/ai-log/P14.md for what was checked instead.
 - Bundle: the entry chunk is about 511 kB (161 kB gzip), mostly MUI + Redux Toolkit; pages are split off. Worth revisiting after the real screens exist.
 - The footer has only links to routes that exist; Eneba's help/legal pages are intentionally not faked.
 - `e2e/shell.e2e.cjs` is not run by `npm test` (it needs a running stack and a browser); Playwright is not a project dependency.

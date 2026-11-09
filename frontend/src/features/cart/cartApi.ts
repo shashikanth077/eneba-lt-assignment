@@ -9,7 +9,21 @@ export const cartApi = baseApi.injectEndpoints({
       query: (body) => ({ url: '/cart', method: 'POST', body }),
       invalidatesTags: ['Cart'], // the header badge and the cart page refetch
     }),
+    /** Sets the quantity of a line. The server answers with the whole cart, recomputed from live prices. */
+    setCartQuantity: build.mutation<Cart, { offerId: number; qty: number }>({
+      query: ({ offerId, qty }) => ({ url: `/cart/${offerId}`, method: 'PATCH', body: { qty } }),
+      invalidatesTags: ['Cart'],
+    }),
+    removeCartLine: build.mutation<Cart, number>({
+      query: (offerId) => ({ url: `/cart/${offerId}`, method: 'DELETE' }),
+      invalidatesTags: ['Cart'],
+    }),
   }),
 });
 
-export const { useGetCartQuery, useAddToCartMutation } = cartApi;
+export const {
+  useGetCartQuery,
+  useAddToCartMutation,
+  useSetCartQuantityMutation,
+  useRemoveCartLineMutation,
+} = cartApi;
