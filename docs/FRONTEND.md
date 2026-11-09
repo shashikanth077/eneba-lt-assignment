@@ -1,7 +1,7 @@
 # Frontend app shell
 
 React 19 + TypeScript (strict) + Vite, Redux Toolkit with RTK Query, MUI 9 themed from `docs/DESIGN_TOKENS.md`, React Router 7 (data router).
-The shell is the frame every page lives in; the screens inside it (store, product, cart, checkout, home blocks) are placeholders until their own steps.
+The shell is the frame every page lives in; the screens inside it (cart and checkout) are placeholders until their own steps; home, store, search and product are built.
 
 ## Layout (what is on every page)
 ```
@@ -17,10 +17,10 @@ Checked at 375 px and 1280 px: no horizontal overflow on any route, and the sugg
 ## Routes
 | Path | Screen | Access |
 |---|---|---|
-| `/` | home (placeholder) | public |
-| `/store` | store (placeholder, shows its `?platform= ?genre= ?sort=` filters) | public |
-| `/search?q=` | search results (placeholder) | public |
-| `/product/:slug` | product page (placeholder) | public |
+| `/` | home (block renderer, see below) | public |
+| `/store` | store, all state in the query string | public |
+| `/search?q=` | search results with did-you-mean | public |
+| `/product/:slug` | product page with offers table | public |
 | `/login`, `/register` | working forms; honour `?next=` | public (signed-in users are sent on) |
 | `/cart`, `/checkout`, `/account/orders` | cart summary / placeholder / order list | **signed-in only** (`ProtectedRoute`) |
 | `*` | not found | public |
