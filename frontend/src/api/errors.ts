@@ -34,10 +34,10 @@ export function getFieldErrors(error: unknown): Record<string, string[]> {
 export function describeError(error: unknown): string {
   const api = getApiError(error);
   if (api) {
-    if (api.code === 'too_many_attempts') {
+    if (api.code === 'too_many_attempts' || api.code === 'rate_limited') {
       const wait = Number(api.details?.retryAfterSeconds);
       return Number.isFinite(wait) && wait > 0
-        ? `Too many attempts. Try again in ${Math.ceil(wait / 60)} min.`
+        ? `Too many attempts. Try again in ${wait < 60 ? `${Math.ceil(wait)} s` : `${Math.ceil(wait / 60)} min`}.`
         : api.message;
     }
     return api.message;

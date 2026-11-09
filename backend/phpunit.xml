@@ -15,6 +15,10 @@
         <env name="STRIPE_WEBHOOK_SECRET" value="whsec_phpunit_only_secret" force="true"/>
         <env name="RESERVATION_MINUTES" value="15" force="true"/>
         <env name="CHECKOUT_CURRENCY" value="eur" force="true"/>
+        <!-- Generous so ordinary tests never meet a limit; RateLimitTest lowers them on purpose. -->
+        <env name="RATE_LIMIT_REGISTER_PER_HOUR" value="100000" force="true"/>
+        <env name="RATE_LIMIT_CHECKOUT_PER_10MIN" value="100000" force="true"/>
+        <env name="RATE_LIMIT_SEARCH_PER_MINUTE" value="100000" force="true"/>
         <env name="KEY_ENCRYPTION_KEY" value="ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZC0=" force="true"/>
     </php>
 </phpunit>

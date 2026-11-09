@@ -7,6 +7,7 @@ declare(strict_types=1);
  *
  *   php shop_race.php checkout <userId>  <startAt> <dbName>   -> runs a checkout for that user
  *   php shop_race.php event    <jsonFile> <startAt> <dbName>  -> applies a (pre-verified) Stripe event from a JSON file
+ *   php shop_race.php login    <email|ip|n> <startAt> <dbName> -> one WRONG-password login attempt (REVIEW.md S4)
  *
  * Everything is set up first, then the process waits until <startAt> (a shared wall-clock time) so all racers fire together.
  * Prints exactly one JSON line.
@@ -14,6 +15,7 @@ declare(strict_types=1);
 
 use App\Exceptions\ApiException;
 use App\Payment\PaymentGateway;
+use App\Services\AuthService;
 use App\Services\CheckoutService;
 use App\Services\PaymentEventService;
 use Dotenv\Dotenv;
@@ -33,6 +35,16 @@ try {
     $work = match ($mode) {
         'checkout' => static fn (): array => ['ok' => true, 'orderId' => $container->get(CheckoutService::class)->checkout((int) $arg)['orderId']],
         'event' => static fn (): array => ['ok' => true, 'outcome' => $container->get(PaymentEventService::class)->handle(json_decode((string) file_get_contents($arg), true))],
+        'login' => static function () use ($container, $arg): array {
+            [$email, $ip, $n] = explode('|', $arg);
+            try {
+                $container->get(AuthService::class)->login($email, "wrong-password-$n", $ip);
+
+                return ['ok' => true, 'code' => 'signed_in'];
+            } catch (ApiException $e) {
+                return ['ok' => false, 'code' => $e->errorCode()];
+            }
+        },
         default => throw new InvalidArgumentException("unknown mode $mode"),
     };
     while (microtime(true) < (float) $startAt) {

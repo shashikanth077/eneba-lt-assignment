@@ -4,6 +4,7 @@
  *   docker compose up            (or: php -S 127.0.0.1:8080 in backend/ + `npm run dev` here, with the DB seeded)
  *   NODE_PATH=$(npm root -g) node e2e/shell.e2e.cjs            # needs Playwright installed (not a project dependency)
  *
+ * (The API's registration limit is 10/hour per address: start it with RATE_LIMITS_ENABLED=false when you run these repeatedly.)
  * Env: BASE_URL (default http://127.0.0.1:5173), SHOTS (directory for screenshots, optional).
  * Exits 1 on the first failed check.
  */

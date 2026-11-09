@@ -40,6 +40,13 @@ describe('api error helpers', () => {
     expect(describeError(apiError('too_many_attempts', 'x', { retryAfterSeconds: 600 }, 429))).toBe(
       'Too many attempts. Try again in 10 min.',
     );
+    // the abuse limiter (REVIEW.md S3) answers 429 rate_limited; short waits are given in seconds
+    expect(describeError(apiError('rate_limited', 'x', { retryAfterSeconds: 42 }, 429))).toBe(
+      'Too many attempts. Try again in 42 s.',
+    );
+    expect(describeError(apiError('rate_limited', 'Too many requests', null, 429))).toBe(
+      'Too many requests',
+    );
     expect(describeError({ status: 'FETCH_ERROR', error: 'TypeError: Failed to fetch' })).toMatch(
       /Cannot reach the server/,
     );

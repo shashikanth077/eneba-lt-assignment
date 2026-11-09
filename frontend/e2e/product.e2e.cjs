@@ -1,6 +1,7 @@
 /**
  * Browser check of /search and /product/:slug against the real API and database.
  *   cd frontend && SQL_CMD="mariadb --socket=/run/mysqld/mysqld.sock keymart" NODE_PATH=$(npm root -g) node e2e/product.e2e.cjs
+ * (The API's registration limit is 10/hour per address: start it with RATE_LIMITS_ENABLED=false when you run these repeatedly.)
  * SQL_CMD runs a statement given with -e (used to make a game have one offer / none, and to undo it). Env: BASE_URL, SHOTS.
  */
 const { chromium } = require('playwright');

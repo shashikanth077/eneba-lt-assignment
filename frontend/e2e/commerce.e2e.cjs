@@ -6,6 +6,7 @@
  * (backend/tests/bin/dev_order.php) and a correctly SIGNED webhook is posted to the real webhook endpoint, exactly what Stripe sends
  * after the card 4242 4242 4242 4242 succeeds. Everything after the card form is therefore real: polling, keys, reveal, copy.
  *
+ * (The API's registration limit is 10/hour per address: start it with RATE_LIMITS_ENABLED=false when you run these repeatedly.)
  * Needs: API on :8080 started with STRIPE_WEBHOOK_SECRET=whsec_e2e (and an empty STRIPE_SECRET_KEY), `npm run dev` on :5173.
  *   cd frontend && SQL_CMD="mariadb --socket=/run/mysqld/mysqld.sock keymart" NODE_PATH=$(npm root -g) node e2e/commerce.e2e.cjs
  */

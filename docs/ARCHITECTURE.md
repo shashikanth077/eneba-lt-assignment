@@ -122,7 +122,7 @@ offer are not listed but keep their page (`offers: []`, `fromPriceCents: null`).
 | GET | `/api/health` | - | - | `200 { status: "ok", db: "ok" }` |
 
 Status codes: `401` not signed in, `403` wrong owner (we use `404` to avoid leaking ids), `409` stock/state
-conflict, `422` validation, `429` rate limited (login/register/suggest).
+conflict, `422` validation, `429` rate limited (login, register, checkout, search/suggest; see docs/REVIEW.md S3, S4).
 
 ---
 
@@ -138,7 +138,7 @@ conflict, `422` validation, `429` rate limited (login/register/suggest).
 - **Frontend:** the SPA cannot read the cookie, so it asks `GET /api/auth/me` on boot (RTK Query) and keeps
   the user in the store. Protected routes redirect to `/login?next=...`. UI guards are convenience only;
   the API enforces `U` on every protected route.
-- **Rate limiting (implemented):** failed logins are counted in `login_attempts` (sliding 15 min window): 5 per (IP + email) and 20 per IP, then `429 too_many_attempts` with `retryAfterSeconds`. Unknown emails are counted exactly like real ones, and unknown emails are verified against a dummy hash, so neither status, body nor timing reveals whether an account exists. Registration is not rate-limited yet (known gap).
+- **Rate limiting (implemented):** failed logins are counted in `login_attempts` (sliding 15 min window): 5 per (IP + email) and 20 per IP, then `429 too_many_attempts` with `retryAfterSeconds`. Unknown emails are counted exactly like real ones, and unknown emails are verified against a dummy hash, so neither status, body nor timing reveals whether an account exists. Registration is limited per address (P15, docs/REVIEW.md S3); the login counters are claimed before the password check so a parallel burst cannot exceed the limit (S4); the client address is read from the right-hand side of `X-Forwarded-For` (S1).
 - **Revocation (implemented):** logout bumps `users.token_version`, so the old JWT is dead server-side. Trade-off: this also signs the user out on their other devices.
 - **Registration vs enumeration:** `register` answers `409 email_taken`, which does reveal that an email exists. That is the usual trade-off for a clear sign-up UX; login never reveals it.
 - **EmailJS:** runs in the browser with a public key, so anything sent through it is public in effect.
