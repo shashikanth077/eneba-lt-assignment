@@ -20,6 +20,9 @@ services:
       KEY_ENCRYPTION_KEY: ${KEY_ENCRYPTION_KEY:-ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZC0=}
       COOKIE_SECURE: "false"
       TRUST_PROXY: "false"
+      # Stripe test mode: put your own keys in the root .env (see .env.example). Empty = payments answer 503.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     volumes:
       - ./backend:/var/www/html
     depends_on:

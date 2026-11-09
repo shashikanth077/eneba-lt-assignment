@@ -6,6 +6,7 @@ digital key delivery, and authentication. "KEYMART" is a placeholder brand name.
 
 - Scope, API, payment flow, risks: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Design reference and component inventory: [docs/DESIGN_TOKENS.md](docs/DESIGN_TOKENS.md)
+- **Running on XAMPP** (PHP 8.2+, MariaDB/MySQL, setup + doctor scripts): [docs/XAMPP.md](docs/XAMPP.md)
 - Project rules for the AI agent: [CLAUDE.md](CLAUDE.md)
 - **AI usage for review:** full chat history (all prompts and replies) in [docs/CHAT_HISTORY.md](docs/CHAT_HISTORY.md); per-task prompt + summary in [docs/ai-log/](docs/ai-log/)
 
@@ -35,10 +36,12 @@ Optional phpMyAdmin at http://localhost:8081: `docker compose --profile tools up
 Reset the database: `docker compose down -v`.
 
 ## Run without Docker
-Needs PHP 8.3 (with `pdo_mysql`), Composer, MySQL 8 and Node 22.
+Needs PHP 8.2+ (with `pdo_mysql`), Composer, MySQL 8 or MariaDB 10.4+ (XAMPP works, see [docs/XAMPP.md](docs/XAMPP.md)) and Node 22.
 ```bash
 # backend
-cd backend && cp .env.example .env && composer install
+cd backend && cp .env.example .env && composer install   # XAMPP: copy .env.xampp.example instead
+php bin/setup.php     # creates the database if missing, migrates, loads demo data
+php bin/doctor.php    # checks PHP, extensions, secrets, database, migrations and says what to fix
 php -S localhost:8080 -t public public/index.php
 
 # frontend (second terminal)
@@ -70,6 +73,18 @@ curl 'http://localhost:8080/api/filters?platform[]=steam'        # option counts
 curl  http://localhost:8080/api/products/<slug>                  # details + every buyable offer, cheapest first
 ```
 Prices are integer cents. Sorts: `popular` (default), `price_asc`, `price_desc`, `newest`, `discount`. Query plan and measurements: [docs/QUERY_PLANS.md](docs/QUERY_PLANS.md).
+
+## Cart, checkout and orders
+Server-side cart, Stripe test-mode payment, key delivery. Every route needs the session cookie (see the Auth walkthrough); the Stripe webhook needs a signature instead.
+```bash
+curl -b jar.txt -H 'X-Requested-With: fetch' -H 'Content-Type: application/json' -d '{"offerId": 1, "qty": 2}' localhost:8080/api/cart   # add
+curl -b jar.txt localhost:8080/api/cart                                                                                               # live prices + stock issues
+curl -b jar.txt -H 'X-Requested-With: fetch' -X POST localhost:8080/api/checkout    # reserves keys, returns { orderId, clientSecret, totalCents, reservedUntil }
+curl -b jar.txt localhost:8080/api/orders/1                                         # keys only appear once the order is paid, and only for its owner
+```
+Needs `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` (test mode) in `.env`; without a key checkout answers `503 payments_unavailable`.
+How to pay a test order with the Stripe CLI (and why `stripe trigger payment_intent.succeeded` alone will not mark your order paid), the concurrency design and the failure
+matrix: [docs/CHECKOUT.md](docs/CHECKOUT.md).
 
 ## Homepage API
 ```bash
@@ -125,8 +140,10 @@ Expected output of step 8: `401 401 401 401 401 429`.
 ## Checks
 ```bash
 cd backend && composer test              # PHPUnit
-cd frontend && npm run lint && npm run typecheck && npm run build
+cd frontend && npm run lint && npm run typecheck && npm test && npm run build
 ```
+The frontend shell (header with live search suggestions, nav bar, footer, routing, auth with protected routes) is described in [docs/FRONTEND.md](docs/FRONTEND.md).
+Open http://localhost:5173 (use `localhost`, not `127.0.0.1`: the API's CSRF origin allow-list names `localhost`).
 
 ## API conventions
 Every error has one shape, with `details` always present (`null` when there is nothing to add):

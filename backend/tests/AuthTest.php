@@ -15,8 +15,12 @@ final class AuthTest extends DbTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        self::$pdo->exec('DELETE FROM login_attempts');
-        self::$pdo->exec('DELETE FROM users');
+        // other test classes leave carts/orders behind that reference users, so clear those too (FK checks off, like the other fixtures)
+        self::$pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+        foreach (['stripe_events', 'cart_items', 'order_items', 'game_keys', 'orders', 'login_attempts', 'users'] as $table) {
+            self::$pdo->exec("TRUNCATE TABLE $table");
+        }
+        self::$pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
     }
 
     // ---- registration ----------------------------------------------------------------------

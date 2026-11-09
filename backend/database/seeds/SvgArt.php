@@ -45,7 +45,8 @@ final class SvgArt
             . '<rect y="300" width="400" height="233" fill="url(#s)"/>' . $text . '</svg>';
     }
 
-    public static function banner(string $title, string $subtitle, Prng $rng): string
+    /** Artwork only: the title, subtitle and button are rendered by the frontend from the banners table, so they stay readable at any size. */
+    public static function banner(string $title, Prng $rng): string
     {
         $h1 = $rng->int(0, 359);
         $h2 = ($h1 + $rng->int(50, 130)) % 360;
@@ -58,13 +59,10 @@ final class SvgArt
             );
         }
 
-        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1328 379" width="1328" height="379" role="img" aria-label="'
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1328 379" width="1328" height="379" preserveAspectRatio="xMidYMid slice" role="img" aria-label="'
             . self::esc($title) . '"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
             . sprintf('<stop offset="0" stop-color="hsl(%d,70%%,30%%)"/><stop offset="1" stop-color="hsl(%d,75%%,18%%)"/>', $h1, $h2)
-            . '</linearGradient></defs><rect width="1328" height="379" fill="url(#g)"/>' . $shapes
-            . '<text x="64" y="170" font-family="Montserrat,Arial,sans-serif" font-weight="800" font-size="56" fill="#fff">' . self::esc($title) . '</text>'
-            . '<text x="64" y="225" font-family="Montserrat,Arial,sans-serif" font-weight="600" font-size="24" fill="#fff" opacity="0.85">'
-            . self::esc($subtitle) . '</text></svg>';
+            . '</linearGradient></defs><rect width="1328" height="379" fill="url(#g)"/>' . $shapes . '</svg>';
     }
 
     /** @return list<string> */

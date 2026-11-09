@@ -11,6 +11,10 @@
         <env name="APP_URL" value="http://localhost:5173" force="true"/>
         <env name="TRUST_PROXY" value="false" force="true"/>
         <env name="CACHE_DRIVER" value="none" force="true"/>
+        <env name="STRIPE_SECRET_KEY" value="" force="true"/>
+        <env name="STRIPE_WEBHOOK_SECRET" value="whsec_phpunit_only_secret" force="true"/>
+        <env name="RESERVATION_MINUTES" value="15" force="true"/>
+        <env name="CHECKOUT_CURRENCY" value="eur" force="true"/>
         <env name="KEY_ENCRYPTION_KEY" value="ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZC0=" force="true"/>
     </php>
 </phpunit>

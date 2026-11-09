@@ -11,6 +11,16 @@ use App\Home\Blocks\BestSellersBlock;
 use App\Home\Blocks\DealsBlock;
 use App\Home\Blocks\NewReleasesBlock;
 use App\Home\HomeBlockRegistry;
+use App\Payment\PaymentGateway;
+use App\Payment\StripePaymentGateway;
+use App\Payment\StripeWebhookVerifier;
+use App\Payment\UnconfiguredPaymentGateway;
+use App\Repositories\CartRepository;
+use App\Repositories\KeyRepository;
+use App\Repositories\OrderRepository;
+use App\Services\CartService;
+use App\Services\CheckoutService;
+use App\Services\OrderLifecycle;
 use App\Repositories\LoginAttemptRepository;
 use App\Services\AuthService;
 use App\Services\LoginThrottle;
@@ -19,9 +29,14 @@ use App\Support\KeyCipher;
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
 
-/** @param array<string, mixed> $settings */
-return static function (array $settings): ContainerInterface {
+/**
+ * @param array<string, mixed> $settings
+ * @param array<string, mixed> $overrides definitions that replace the defaults (tests inject a fake payment gateway here)
+ */
+return static function (array $settings, array $overrides = []): ContainerInterface {
     $auth = $settings['auth'];
+    $stripe = $settings['stripe'];
+    $checkout = $settings['checkout'];
     // Each homepage block gets its OWN cache namespace, so blocks can be tuned, purged or extracted independently.
     $blockCache = static fn (ContainerInterface $c, string $slug) => $c->get(CacheFactory::class)->for($slug);
 
@@ -39,12 +54,28 @@ return static function (array $settings): ContainerInterface {
             $auth['login_max_per_ip'],
             $auth['login_window_seconds'],
         ),
+        KeyRepository::class => static fn (ContainerInterface $c): KeyRepository => new KeyRepository($c->get(PDO::class), $settings['db']['lock_strategy']),
         CacheFactory::class => static fn (): CacheFactory => new CacheFactory($settings['cache']['driver'], $settings['cache']['dir']),
         HomeBlockRegistry::class => static fn (ContainerInterface $c): HomeBlockRegistry => new HomeBlockRegistry($c, require __DIR__ . '/home.php'),
         BannersBlock::class => static fn (ContainerInterface $c): BannersBlock => new BannersBlock($c->get(PDO::class), $blockCache($c, BannersBlock::SLUG)),
         BestSellersBlock::class => static fn (ContainerInterface $c): BestSellersBlock => new BestSellersBlock($c->get(PDO::class), $blockCache($c, BestSellersBlock::SLUG)),
         DealsBlock::class => static fn (ContainerInterface $c): DealsBlock => new DealsBlock($c->get(PDO::class), $blockCache($c, DealsBlock::SLUG)),
         NewReleasesBlock::class => static fn (ContainerInterface $c): NewReleasesBlock => new NewReleasesBlock($c->get(PDO::class), $blockCache($c, NewReleasesBlock::SLUG)),
+        PaymentGateway::class => static fn (): PaymentGateway => $stripe['secret_key'] !== ''
+            ? new StripePaymentGateway($stripe['secret_key'])
+            : new UnconfiguredPaymentGateway(),
+        StripeWebhookVerifier::class => static fn (): StripeWebhookVerifier => new StripeWebhookVerifier($stripe['webhook_secret'], $stripe['webhook_tolerance']),
+        CartService::class => static fn (ContainerInterface $c): CartService => new CartService($c->get(CartRepository::class), $checkout['currency']),
+        CheckoutService::class => static fn (ContainerInterface $c): CheckoutService => new CheckoutService(
+            $c->get(PDO::class),
+            $c->get(CartRepository::class),
+            $c->get(OrderRepository::class),
+            $c->get(KeyRepository::class),
+            $c->get(OrderLifecycle::class),
+            $c->get(PaymentGateway::class),
+            $checkout['currency'],
+            $checkout['reservation_minutes'],
+        ),
         AuthController::class => static fn (ContainerInterface $c): AuthController => new AuthController(
             $c->get(AuthService::class),
             $c->get(TokenService::class),
@@ -52,6 +83,7 @@ return static function (array $settings): ContainerInterface {
             $auth['trust_proxy'],
         ),
     ]);
+    $builder->addDefinitions($overrides);
 
     return $builder->build();
 };
