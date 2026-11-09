@@ -1,0 +1,35 @@
+import { ThemeProvider } from '@mui/material/styles';
+import { render } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { Provider } from 'react-redux';
+import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router-dom';
+import { routes } from '../app/router';
+import { makeStore } from '../app/store';
+import { theme } from '../theme/theme';
+
+/** The whole app (real routes, real store, real components) on an in-memory router, starting at `path`. */
+export function renderApp(path: string) {
+  const store = makeStore();
+  const router = createMemoryRouter(routes, { initialEntries: [path] });
+  const view = render(
+    <Provider store={store}>
+      <ThemeProvider theme={theme}>
+        <RouterProvider router={router} />
+      </ThemeProvider>
+    </Provider>,
+  );
+  return { ...view, store, router };
+}
+
+/** One component with a store and a router around it (for components that do not need the app's routes). */
+export function renderWithProviders(ui: ReactElement, { path = '/' }: { path?: string } = {}) {
+  const store = makeStore();
+  const view = render(
+    <Provider store={store}>
+      <ThemeProvider theme={theme}>
+        <MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>
+      </ThemeProvider>
+    </Provider>,
+  );
+  return { ...view, store };
+}

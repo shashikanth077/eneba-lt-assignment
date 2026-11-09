@@ -1,21 +1,20 @@
-import Container from '@mui/material/Container';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import { Logo } from '../../components/Logo';
-import { ApiStatus } from '../health/ApiStatus';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import { Link as RouterLink } from 'react-router-dom';
+import { PagePlaceholder } from '../../components/layout/PagePlaceholder';
 
-/** Placeholder until the config-driven homepage blocks are built. */
+/** Placeholder until the config-driven homepage blocks (GET /api/home/layout) are rendered. */
 export function HomePage() {
   return (
-    <Container maxWidth={false} sx={{ maxWidth: 1440, py: 8 }}>
-      <Stack spacing={3} sx={{ alignItems: 'flex-start' }}>
-        <Logo size={48} />
-        <Typography variant="h1">Digital game keys, cheaper.</Typography>
-        <Typography color="text.secondary">
-          Placeholder page. The storefront is coming soon.
-        </Typography>
-        <ApiStatus />
-      </Stack>
-    </Container>
+    <PagePlaceholder title="Digital game keys, cheaper.">
+      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        <Button component={RouterLink} to="/store" variant="contained">
+          Browse the store
+        </Button>
+        <Button component={RouterLink} to="/store?sort=discount" variant="outlined">
+          See the deals
+        </Button>
+      </Box>
+    </PagePlaceholder>
   );
 }

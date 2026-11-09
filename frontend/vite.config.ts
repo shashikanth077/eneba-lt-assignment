@@ -1,4 +1,5 @@
-import { defineConfig, loadEnv } from 'vite';
+import { loadEnv } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // In production Vercel rewrites /api/* to the API, so the SPA always calls the same origin.
@@ -9,6 +10,12 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    test: {
+      environment: 'jsdom',
+      setupFiles: ['./src/test/setup.ts'],
+      css: false,
+      restoreMocks: true,
+    },
     server: {
       port: 5173,
       proxy: { '/api': { target, changeOrigin: true } },

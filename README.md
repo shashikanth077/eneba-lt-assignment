@@ -137,8 +137,10 @@ Expected output of step 8: `401 401 401 401 401 429`.
 ## Checks
 ```bash
 cd backend && composer test              # PHPUnit
-cd frontend && npm run lint && npm run typecheck && npm run build
+cd frontend && npm run lint && npm run typecheck && npm test && npm run build
 ```
+The frontend shell (header with live search suggestions, nav bar, footer, routing, auth with protected routes) is described in [docs/FRONTEND.md](docs/FRONTEND.md).
+Open http://localhost:5173 (use `localhost`, not `127.0.0.1`: the API's CSRF origin allow-list names `localhost`).
 
 ## API conventions
 Every error has one shape, with `details` always present (`null` when there is nothing to add):
