@@ -29,7 +29,7 @@ Deliverables: GitHub link, public free-tier deployment URL, full AI chat log (do
 - TypeScript strict; no `any`. Function components and hooks only. One RTK Query API slice per
   backend resource; the frontend renders only what the API returns.
 - PHP: `declare(strict_types=1)`, PSR-12, typed properties and returns, PDO prepared statements
-  only, thin controllers, logic in services, consistent JSON error shape `{ "error": { "code", "message" } }`.
+  only, thin controllers, logic in services, one JSON error shape `{ "error": { "code", "message", "details" } }` (`details` is `null` when empty).
 - Passwords hashed with `password_hash`; auth via token or session; never trust client prices
   (recompute totals server-side).
 - Secrets (Stripe, DB, EmailJS) live in `.env` files, never committed; keep `.env.example` current.

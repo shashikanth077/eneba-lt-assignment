@@ -78,7 +78,7 @@ body for signature verification, and must not depend on a proxy). Local dev uses
 ## 3. REST API
 
 Conventions: JSON, prices as integer cents + `currency: "EUR"`, errors as
-`{ "error": { "code": "string", "message": "string", "details"?: {} } }`, pagination as
+`{ "error": { "code": "string", "message": "string", "details": {} \| null } }` (`details` is always present), pagination as
 `{ items, page, pageSize, total }`. Auth column: `-` public, `U` needs cookie. All state-changing
 requests require header `X-Requested-With: fetch` (CSRF, see 4).
 

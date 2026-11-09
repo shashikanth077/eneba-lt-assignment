@@ -45,7 +45,7 @@ MUI mapping: `primary` = yellow (black text), `secondary` = blue (white text), `
 ## 2. Typography
 - **Family:** `Montserrat` (+ Helvetica/Arial fallback). **Estimated.** The original is a geometric sans
   that looks like a Gotham/Gilroy relative and is licensed; Montserrat is the closest free Google font.
-  Load weights 500/600/700/800.
+  Load weights 500/600/700/800. **Decision: keep Montserrat.**
 - Weights: headings/prices 700-800, body 500-600, **nearly everything is bold-ish**. Estimated.
 - Scale (all **estimated** from glyph heights): H1 34 px/700 (page title "El. pinigų…"), section heading
   34 px (e.g. "Rekomenduojama tau"; we use h2 28 px for blocks), H3 22, H4 18 (nav links, header text),
@@ -109,7 +109,7 @@ outline, checked = yellow fill with dark tick. **Price range:** two inputs separ
 **Panels:** `surface` bg, 24 px padding, title 18 px/700; inner rows use `surfaceInset`.
 
 ## 7. Placeholder wordmark and assets
-No Eneba logo, artwork or icons are copied. The wordmark is **text only** (working name "KEYMART", 800 weight,
+No Eneba logo, artwork or icons are copied. The wordmark is **text only** (**decided:** "KEYMART", 800 weight,
 white, lowercase optional) rendered by a `<Logo />` component so it can be renamed in one place. Product
 covers, banners and platform logos are seeded as generated placeholder images/gradients; icons come from
 `@mui/icons-material`.

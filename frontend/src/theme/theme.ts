@@ -149,9 +149,16 @@ export const theme = createTheme({
     },
     MuiChip: {
       styleOverrides: {
-        root: { backgroundColor: c.chip, color: '#fff', fontWeight: 600, height: 36 },
+        root: { fontWeight: 600, height: 36 },
         label: { paddingInline: 18 },
       },
+      variants: [
+        // Only the neutral chip uses the filter-chip surface; coloured chips keep their palette colour.
+        {
+          props: { color: 'default', variant: 'filled' },
+          style: { backgroundColor: c.chip, color: '#fff' },
+        },
+      ],
     },
     MuiCheckbox: {
       defaultProps: { disableRipple: true },
