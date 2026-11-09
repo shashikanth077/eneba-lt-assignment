@@ -66,6 +66,15 @@ deals 34 · product_stats 120 · banners 4 · home_blocks 4
 Game keys look like `XXXXX-XXXXX-XXXXX` and are stored encrypted (libsodium, `KEY_ENCRYPTION_KEY`). Covers and
 banners are generated SVGs served from `/api/images/products/{slug}.svg` and `/api/images/banners/{slug}.svg`.
 
+## Payments and emails: what to configure
+| Where | Setting | Purpose |
+|---|---|---|
+| `backend/.env` (or root `.env` for Docker) | `STRIPE_SECRET_KEY=sk_test_...`, `STRIPE_WEBHOOK_SECRET=whsec_...` | creating the payment, verifying Stripe's webhook |
+| `frontend/.env` (or root `.env` for Docker) | `VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...` | Stripe's Payment Element in the browser (test keys only) |
+| `frontend/.env` | `VITE_EMAILJS_SERVICE_ID`, `VITE_EMAILJS_PUBLIC_KEY`, `VITE_EMAILJS_WELCOME_TEMPLATE_ID`, `VITE_EMAILJS_ORDER_TEMPLATE_ID` | welcome email and key-less order receipt (optional) |
+
+Locally also run `stripe listen --forward-to localhost:8080/api/webhooks/stripe` (it prints the `whsec_...`), then buy with card `4242 4242 4242 4242`, any future date, any CVC. Details: [docs/FRONTEND.md](docs/FRONTEND.md), [docs/CHECKOUT.md](docs/CHECKOUT.md).
+
 ## Catalog API
 ```bash
 curl 'http://localhost:8080/api/products?platform[]=steam&genre=Action&price_max=3000&sort=discount&page=1&pageSize=12'

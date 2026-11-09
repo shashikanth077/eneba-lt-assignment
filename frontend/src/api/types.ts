@@ -169,6 +169,35 @@ export interface Cart {
 export type OrderStatus =
   'pending' | 'paid' | 'failed' | 'expired' | 'canceled' | 'refund_needed' | 'refunded';
 
+export interface OrderItem {
+  productSlug: string;
+  productName: string;
+  sellerName: string;
+  unitPriceCents: number;
+  qty: number;
+  /** Only present on a paid order, and only from GET /api/orders/{id}. Never copy these anywhere but the order page. */
+  keys?: string[];
+}
+
+export interface OrderDetail {
+  id: number;
+  status: OrderStatus;
+  totalCents: number;
+  currency: string;
+  createdAt: string;
+  reservedUntil?: string;
+  paidAt?: string;
+  items: OrderItem[];
+}
+
+export interface Checkout {
+  orderId: number;
+  clientSecret: string;
+  totalCents: number;
+  currency: string;
+  reservedUntil: string;
+}
+
 export interface OrderSummary {
   id: number;
   status: OrderStatus;
