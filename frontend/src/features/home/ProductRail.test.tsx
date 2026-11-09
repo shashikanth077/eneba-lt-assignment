@@ -29,9 +29,12 @@ describe('ProductRail', () => {
     expect(await screen.findByRole('heading', { name: 'Hot deals' })).toBeInTheDocument();
     const first = screen.getByRole('link', { name: /Alpha Quest/ });
     expect(first).toHaveAttribute('href', '/product/alpha-quest-steam-global');
-    expect(first).toHaveTextContent('Steam · Global');
+    expect(first).toHaveTextContent('Steam');
+    expect(first).toHaveTextContent('Global');
     expect(first).toHaveTextContent(formatMoney(1999));
-    expect(screen.getByRole('link', { name: /Bravo Run/ })).toHaveTextContent('Xbox · Europe');
+    const second = screen.getByRole('link', { name: /Bravo Run/ });
+    expect(second).toHaveTextContent('Xbox');
+    expect(second).toHaveTextContent('Europe');
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
   });
 
@@ -93,7 +96,7 @@ describe('ProductCard', () => {
     wrap(base);
 
     expect(screen.getByRole('link')).toHaveTextContent(formatMoney(base.fromPriceCents ?? 0));
-    expect(screen.getByRole('link')).not.toHaveTextContent('-');
+    expect(screen.getByRole('link')).not.toHaveTextContent('%');
   });
 
   it('shows a discount even when the crossed-out price is unknown (catalog cards)', () => {

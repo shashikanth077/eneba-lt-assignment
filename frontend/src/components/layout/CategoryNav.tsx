@@ -22,7 +22,7 @@ const SHORTCUTS = [
  * really holds. If that request fails the bar still works with the fixed shortcuts. On a phone it scrolls sideways.
  */
 export function CategoryNav() {
-  const { data, isLoading } = useGetFiltersQuery();
+  const { data, isLoading } = useGetFiltersQuery('');
   const location = useLocation();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const here = location.pathname + location.search;
