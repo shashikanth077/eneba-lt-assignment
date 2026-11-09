@@ -5,20 +5,8 @@ import { BannerSkeleton } from './BannerCarousel';
 import { HomeBlocks, HomeEmpty } from './HomeBlocks';
 import { RailSkeleton } from './ProductRail';
 import { parseLayout } from './blocks';
+import { visuallyHidden } from '../../lib/visuallyHidden';
 import { useGetHomeLayoutQuery } from './homeApi';
-
-/** Visually hidden but read by screen readers: every page needs one h1. */
-const visuallyHidden = {
-  position: 'absolute',
-  width: '1px', // strings on purpose: in MUI's sx a bare number <= 1 means a percentage, so `width: 1` would be 100%
-  height: '1px',
-  margin: '-1px',
-  padding: 0,
-  overflow: 'hidden',
-  clip: 'rect(0 0 0 0)',
-  whiteSpace: 'nowrap',
-  border: 0,
-} as const;
 
 /**
  * The homepage is not written here, it is assembled: ask the server which blocks to show (GET /api/home/layout), then let a renderer
