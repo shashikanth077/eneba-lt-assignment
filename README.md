@@ -71,6 +71,14 @@ curl  http://localhost:8080/api/products/<slug>                  # details + eve
 ```
 Prices are integer cents. Sorts: `popular` (default), `price_asc`, `price_desc`, `newest`, `discount`. Query plan and measurements: [docs/QUERY_PLANS.md](docs/QUERY_PLANS.md).
 
+## Homepage API
+```bash
+curl http://localhost:8080/api/home/layout          # enabled blocks, in order: { blocks: [{ id, type, title, endpoint, config }] }
+curl http://localhost:8080/api/home/deals           # each block has its own endpoint, service class and cache
+```
+Switch a block off with `UPDATE home_blocks SET enabled = 0 WHERE slug = 'deals';`: it leaves the layout and its endpoint answers 404.
+Design, caching and how to add a block: [docs/HOME_BLOCKS.md](docs/HOME_BLOCKS.md). `CACHE_DRIVER=none` disables the block cache.
+
 ## Search API
 ```bash
 curl -G http://localhost:8080/api/search --data-urlencode 'q=wither 3'            # typo-tolerant, returns score, includes out-of-stock

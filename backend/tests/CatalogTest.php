@@ -7,8 +7,6 @@ namespace Tests;
 use App\Catalog\ProductFilters;
 use App\Catalog\ProductSort;
 use App\Repositories\ProductRepository;
-use PDO;
-use PDOStatement;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
@@ -347,26 +345,7 @@ final class CatalogTest extends DbTestCase
 
     public function testStatementCountDoesNotGrowWithTheNumberOfRows(): void
     {
-        $pdo = new class (self::$pdo) extends PDO {
-            public int $statements = 0;
-
-            public function __construct(PDO $source)
-            {
-                parent::__construct(
-                    'mysql:host=' . ($_ENV['DB_HOST'] ?? '127.0.0.1') . ';port=' . ($_ENV['DB_PORT'] ?? '3306') . ';dbname=' . $_ENV['DB_NAME'] . ';charset=utf8mb4',
-                    $_ENV['DB_USER'] ?? '',
-                    $_ENV['DB_PASS'] ?? '',
-                    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false],
-                );
-            }
-
-            public function prepare(string $query, array $options = []): PDOStatement|false
-            {
-                $this->statements++;
-
-                return parent::prepare($query, $options);
-            }
-        };
+        $pdo = self::countingPdo();
         $repo = new ProductRepository($pdo);
         $all = new ProductFilters();
 

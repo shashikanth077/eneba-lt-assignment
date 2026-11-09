@@ -105,11 +105,11 @@ offer are not listed but keep their page (`offers: []`, `fromPriceCents: null`).
 | GET | `/api/search` | - | same as `/api/products`, but `q` is required | `200 { items: ProductCard[] (with score), page, pageSize, total }`; `422` without `q` |
 | GET | `/api/search/suggest` | - | `?q=` (2+ normalised chars, else an empty list) | `200 { suggestions: [{ slug, name, coverUrl, platform: {slug,name}, inStock, score }] }` best 6, out-of-stock included |
 | GET | `/api/products/{slug}` | - | - | `200 { product: { ...ProductCard, description, releaseDate, genres[], publisher }, offers: Offer[] }`, offers buyable only, cheapest first. `404 not_found` for an unknown slug |
-| GET | `/api/home/layout` | - | - | `200 { blocks: [{ id, type, title, endpoint }] }` ordered |
-| GET | `/api/home/banners` | - | - | `200 { items: [{ id, imageUrl, title, subtitle, href }] }` |
-| GET | `/api/home/best-sellers` | - | - | `200 { items: ProductCard[] }` |
-| GET | `/api/home/deals` | - | - | `200 { items: ProductCard[] }` (discounted offers) |
-| GET | `/api/home/new-releases` | - | - | `200 { items: ProductCard[] }` |
+| GET | `/api/home/layout` | - | - | `200 { blocks: [{ id, type, title, endpoint, config }] }` enabled blocks only, ordered by `position`; `id` is the slug, `config` the row's JSON (`{}` if empty) |
+| GET | `/api/home/banners` | - | - | `200 { items: [{ id, imageUrl, title, subtitle, ctaLabel, href }] }`; `404` when the block is disabled |
+| GET | `/api/home/best-sellers` | - | - | `200 { items: ProductCard[] }` by units sold, buyable products only, `limit` from the row config (1-50); `404` when disabled |
+| GET | `/api/home/deals` | - | - | `200 { items: (ProductCard & { originalPriceCents })[] }` products whose cheapest buyable offer is on an unexpired deal, biggest discount first; `404` when disabled |
+| GET | `/api/home/new-releases` | - | - | `200 { items: ProductCard[] }` already released, newest first, buyable only; `404` when disabled |
 | POST | `/api/cart/quote` | - | `{ items: [{ offerId, qty }] }` | `200 { lines: [{ offerId, productName, sellerName, unitCents, qty, lineCents, available }], totalCents, issues: [{ offerId, code: "out_of_stock"\|"price_changed"\|"inactive", message }] }` |
 | POST | `/api/checkout` | U | `{ items: [{ offerId, qty }] }` | `201 { orderId, clientSecret, totalCents, reservedUntil }`. `409 out_of_stock` (with offending offer ids). Reserves keys, creates PaymentIntent |
 | POST | `/api/stripe/webhook` | Stripe signature | raw Stripe event | `200 {}` always after verification (idempotent). `400` bad signature |
@@ -221,26 +221,24 @@ sequenceDiagram
 
 ---
 
-## 6. Homepage block architecture
+## 6. Homepage block architecture (as built; details in `docs/HOME_BLOCKS.md`)
 
 Requirement: each block has its own backend source; the frontend only renders.
 
-- **Layout in the DB, not the frontend.** Table `home_blocks(id, type, title, position, enabled, config JSON)`.
-  `GET /api/home/layout` returns the ordered list, each with its own `endpoint`
-  (e.g. `{ type: "carousel", title: "Best sellers", endpoint: "/api/home/best-sellers" }`).
-- **One module per block** on the backend (`Home/BestSellers`, `Home/Deals`, `Home/Banners`,
-  `Home/NewReleases`), each with its own controller, service and query/table:
-  banners -> `banners` table; best sellers -> aggregate of sold `order_items`/`popularity`;
-  deals -> offers with `original_price_cents > price_cents`; new releases -> `release_date`.
-  Adding a block = one module + one `home_blocks` row, no frontend change if it reuses an existing `type`.
-- **Frontend:** a registry `{ hero: HeroBlock, carousel: ProductCarousel, ... }` maps `type` -> component.
-  Each block calls its own RTK Query endpoint, so a slow or failing block shows its own skeleton/error
-  and never blocks the others. No product names, prices or banner text exist in frontend code.
-- **CHALLENGE ("separate services"):** I deliberately do **not** build separate deployables. Free tiers
-  cannot host five services, and the brief asks that *content comes from its own backend service or
-  database*, which separate modules/endpoints/tables satisfy and which we can justify as a seam that
-  could be split later. To go further cheaply, one block could read from a different source (e.g. banners
-  from a JSON file) to prove the contract is source-agnostic.
+- **Layout in the DB, not the frontend.** Table `home_blocks(slug, type, title, endpoint, position, enabled, config JSON)`.
+  `GET /api/home/layout` returns the enabled rows in order as `{ id, type, title, endpoint, config }`. Disabling a row removes the block
+  from the layout and its endpoint answers 404 (shown in `HomeTest`).
+- **One class, one endpoint, one query set per block** (`App\Home\Blocks\{Banners,BestSellers,Deals,NewReleases}Block`), sharing only the
+  `HomeBlock` interface. Each owns its SQL, payload shape and cache (own namespace and TTL: banners 5 min, best sellers 10, deals 2,
+  new releases 10). Sources: `banners`; `product_stats.units_sold`; `deals`; `products.release_date`. A reflection test fails the build if
+  blocks start sharing a parent, a trait or each other's classes.
+- **Adding a block** = one class + one line in `config/home.php` + one `home_blocks` row. The route comes from the class constant.
+- **Frontend:** a registry `{ hero: HeroBlock, carousel: ProductCarousel, ... }` maps `type` to a component; each renderer fetches
+  `block.endpoint` itself, so a slow or failing block shows its own skeleton/error and never blocks the others. A new block with an existing
+  `type` needs no frontend change; a new `type` needs one registered renderer and no new route. No product names, prices or banner text exist in frontend code.
+- **CHALLENGE ("separate services"):** still deliberately **not** separate deployables (free tiers cannot host five services). The seam is real,
+  though: no block depends on another, so any of them can be extracted by copying one class and the table it reads. The price is some duplicated SQL
+  (about 40 lines per product block), accepted on purpose.
 
 ---
 

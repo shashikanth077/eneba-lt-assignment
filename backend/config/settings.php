@@ -29,6 +29,10 @@ return static function (): array {
             'login_max_per_ip' => (int) $env('LOGIN_MAX_FAILURES_PER_IP', '20'),
             'login_window_seconds' => (int) $env('LOGIN_WINDOW_SECONDS', '900'),
         ],
+        'cache' => [
+            'driver' => $env('CACHE_DRIVER', 'file'), // file | none
+            'dir' => $env('CACHE_DIR', sys_get_temp_dir() . '/keymart-cache'),
+        ],
         'keys' => [
             // base64 of 32 random bytes; encrypts game keys at rest
             'encryption' => $env('KEY_ENCRYPTION_KEY'),

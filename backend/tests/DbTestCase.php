@@ -41,6 +41,12 @@ abstract class DbTestCase extends TestCase
         $_ENV['DB_NAME'] = getenv('TEST_DB_NAME') ?: 'keymart_test';
     }
 
+    /** A second connection to the test database that counts every statement it prepares or runs. */
+    protected static function countingPdo(): CountingPdo
+    {
+        return new CountingPdo((require __DIR__ . '/../config/settings.php')()['db']);
+    }
+
     /** @param array<string, mixed>|null $body @param array<string, string> $headers */
     protected function send(string $method, string $path, ?array $body = null, ?string $token = null, string $ip = '10.0.0.1', array $headers = []): ResponseInterface
     {

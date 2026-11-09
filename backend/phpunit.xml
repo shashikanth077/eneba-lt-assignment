@@ -10,6 +10,7 @@
         <env name="COOKIE_SECURE" value="true" force="true"/>
         <env name="APP_URL" value="http://localhost:5173" force="true"/>
         <env name="TRUST_PROXY" value="false" force="true"/>
+        <env name="CACHE_DRIVER" value="none" force="true"/>
         <env name="KEY_ENCRYPTION_KEY" value="ZGV2LW9ubHkta2V5LWRvLW5vdC11c2UtaW4tcHJvZC0=" force="true"/>
     </php>
 </phpunit>
