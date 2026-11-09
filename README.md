@@ -71,6 +71,14 @@ curl  http://localhost:8080/api/products/<slug>                  # details + eve
 ```
 Prices are integer cents. Sorts: `popular` (default), `price_asc`, `price_desc`, `newest`, `discount`. Query plan and measurements: [docs/QUERY_PLANS.md](docs/QUERY_PLANS.md).
 
+## Search API
+```bash
+curl -G http://localhost:8080/api/search --data-urlencode 'q=wither 3'            # typo-tolerant, returns score, includes out-of-stock
+curl -G http://localhost:8080/api/search/suggest --data-urlencode 'q=cyb'         # autocomplete, best 6
+curl -G http://localhost:8080/api/products --data-urlencode 'q=cyber' -d 'platform[]=steam&sort=price_asc'   # search + filters + any sort
+```
+Pipeline, scoring formula, complexity, measured scale limit and the production recommendation: [docs/SEARCH.md](docs/SEARCH.md).
+
 ## Auth API: curl walkthrough
 Needs the API on :8080 and `COOKIE_SECURE=false` (the local default; `curl` does not send `Secure` cookies over
 plain http). Every state-changing request must send `X-Requested-With: fetch` (CSRF defence). `-c/-b jar.txt` keeps the cookie.

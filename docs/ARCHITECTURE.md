@@ -83,7 +83,8 @@ Conventions: JSON, prices as integer cents + `currency: "EUR"`, errors as
 requests require header `X-Requested-With: fetch` (CSRF, see 4).
 
 **Types** (abridged)
-`ProductCard = { id, slug, name, coverUrl, platform: {slug,name}, region: {slug,name}, fromPriceCents, offerCount, discountPct? }`
+`ProductCard = { id, slug, name, coverUrl, platform: {slug,name}, region: {slug,name}, fromPriceCents: number|null, offerCount, inStock, discountPct?, score? }`
+(`score` 0..1 only in search results; `fromPriceCents` is `null` and `inStock` false for an out-of-stock product, which only appears in search results)
 `Offer = { id, seller: { id, name, rating }, priceCents, originalPriceCents?, stock, deliveryType: "instant" }`
 `User = { id, email, displayName }`
 
@@ -99,9 +100,10 @@ offer are not listed but keep their page (`offers: []`, `fromPriceCents: null`).
 | POST | `/api/auth/login` | - | `{ email, password }` | `200 { user }` + sets cookie. `401 invalid_credentials` (same message for unknown email) |
 | POST | `/api/auth/logout` | - | - | `204`, clears cookie. Public and idempotent; a valid token is also revoked server-side (`token_version` bump) |
 | GET | `/api/auth/me` | U | - | `200 { user }` or `401` |
-| GET | `/api/products` | - | query: `platform[]` (slug), `region[]` (slug), `genre[]` (name), `price_min`, `price_max` (cents, on the from price), `sort` (`popular` default \| `price_asc` \| `price_desc` \| `newest` \| `discount`), `page` (>=1), `pageSize` (1-48, default 24). Single values (`platform=steam`) work too. `q` / `relevance` arrive with the search task | `200 { items: ProductCard[], page, pageSize, total }`; a page past the end is `items: []`. `422` on invalid input (details per field) |
-| GET | `/api/filters` | - | query: the same filters (for counts) | `200 { platforms: [{value,label,count}], regions: [...], genres: [...], price: {min,max} }`. Each facet is counted with all filters except its own; zero-count options are dropped unless selected; `price` is `{min:null,max:null}` when nothing matches |
-| GET | `/api/search/suggest` | - | `?q=` (2+ chars) | `200 { suggestions: [{ slug, name, coverUrl, platform }] }` max 8 |
+| GET | `/api/products` | - | query: `q` (text search, 1-100 chars), `platform[]` (slug), `region[]` (slug), `genre[]` (name), `price_min`, `price_max` (cents, on the from price), `sort` (`popular` default without `q` \| `price_asc` \| `price_desc` \| `newest` \| `discount` \| `relevance` = default with `q`, 422 without `q`), `page` (>=1), `pageSize` (1-48, default 24). Single values (`platform=steam`) work too | `200 { items: ProductCard[], page, pageSize, total }`; a page past the end is `items: []`. With `q`, items carry `score` and out-of-stock matches are included. `422` on invalid input (details per field) |
+| GET | `/api/filters` | - | query: the same filters, including `q` (counts for the search results) | `200 { platforms: [{value,label,count}], regions: [...], genres: [...], price: {min,max} }`. Each facet is counted with all filters except its own; zero-count options are dropped unless selected; `price` is `{min:null,max:null}` when nothing matches |
+| GET | `/api/search` | - | same as `/api/products`, but `q` is required | `200 { items: ProductCard[] (with score), page, pageSize, total }`; `422` without `q` |
+| GET | `/api/search/suggest` | - | `?q=` (2+ normalised chars, else an empty list) | `200 { suggestions: [{ slug, name, coverUrl, platform: {slug,name}, inStock, score }] }` best 6, out-of-stock included |
 | GET | `/api/products/{slug}` | - | - | `200 { product: { ...ProductCard, description, releaseDate, genres[], publisher }, offers: Offer[] }`, offers buyable only, cheapest first. `404 not_found` for an unknown slug |
 | GET | `/api/home/layout` | - | - | `200 { blocks: [{ id, type, title, endpoint }] }` ordered |
 | GET | `/api/home/banners` | - | - | `200 { items: [{ id, imageUrl, title, subtitle, href }] }` |
@@ -242,32 +244,29 @@ Requirement: each block has its own backend source; the frontend only renders.
 
 ---
 
-## 7. Fuzzy search
+## 7. Fuzzy search (as built; details, formulas and measurements in `docs/SEARCH.md`)
 
-Used by `GET /api/products?q=` and `GET /api/search/suggest`. Constraint: LIKE + PHP re-rank.
+Used by `GET /api/search`, `GET /api/search/suggest` and `GET /api/products?q=`. Constraint kept: LIKE + PHP re-rank.
 
-**CHALLENGE:** `LIKE '%q%'` alone cannot find typos ("cyberpnuk" matches nothing), so the re-ranker would
-have nothing to re-rank. Candidate generation has to be fuzzy too. Pipeline:
+**CHALLENGE (still true):** `LIKE '%q%'` alone cannot find typos ("cyberpnuk" matches nothing), so candidate retrieval is fuzzy too.
 
-1. **Normalize** query and `products.name_norm` the same way: lowercase, strip accents, remove punctuation,
-   collapse spaces (`name_norm` is computed at insert/seed time).
-2. **Candidates (SQL):** `WHERE name_norm LIKE %q%` OR, for typos, `name_norm LIKE %t%` for up to ~12 of the
-   query's 3-character grams `t`. Cap at 200 rows. Cheap enough for a few thousand products (full scan);
-   state this limit openly. Filters (platform, region, price) are applied in SQL first.
-3. **Score (PHP), per candidate:**
-   - trigram Jaccard similarity of query vs name (0..1), weight 0.5;
-   - best per-token `1 - levenshtein(qToken, nameToken) / max(len)` averaged over query tokens, weight 0.3;
-   - bonuses: exact match +1, prefix match +0.3, all query tokens contained +0.2.
-   Drop candidates below a threshold (~0.35) so garbage does not appear; tune with a fixture list.
-4. **Sort:** by score for `sort=relevance` (default when `q` is set). For other sorts, filter by the
-   threshold then apply the chosen order. Paginate after scoring (hence the 200 cap).
-5. **Suggest:** same pipeline, top 8, debounced 250 ms on the client; the header search box is global
-   and navigates to `/store?q=`.
-6. **Tests:** a table of cases (`"wticher"` -> The Witcher, `"cyber"` -> Cyberpunk, `"fifa 24"` -> FIFA 24,
-   `"zzzzz"` -> nothing).
+1. **Normalize** query and `products.name_norm` with the same `TextNormalizer` (lower-case, strip diacritics, drop apostrophes,
+   punctuation to space, collapse spaces).
+2. **Candidates (SQL, capped at 200):** the whole phrase as a substring, each word as a title/word prefix, and up to 12 inner
+   3-letter pieces of the words (the typo net). Ordered by number of matching patterns so the cap keeps the best candidates.
+3. **Re-rank (PHP):** `0.50 * tokenScore + 0.30 * trigramScore + bonus` (per-word Levenshtein, partial-word and in-word credit,
+   pg_trgm-style trigrams, exact/prefix bonus, penalty when a significant word matches nothing). Scores below 0.40 are dropped.
+   Word order does not matter (each query word is matched independently).
+4. **Sort and page in SQL:** `sort=relevance` (default when `q` is set) orders by the ranked id list (`FIELD(p.id, ...)`);
+   every other sort, all filters, facets and pagination work on the matched set. Filters are applied after the top-200 cut.
+5. **Out of stock:** when searching, products without a buyable offer are included (`LEFT JOIN`), flagged `inStock: false`, with
+   `fromPriceCents: null`; price filters exclude them and price sorts put them last. Plain browsing still hides them.
+6. **Suggest:** same pipeline, best 6, empty list below 2 characters; debounce (250 ms) is the client's job.
+7. **Tests:** a 29-row query-to-result table (typos, partial names, word order, diacritics, injection strings, nonsense), unit tests
+   of the scoring, and checks on the seeded catalog (see `docs/SEARCH.md`).
 
-Known limits: no stemming/synonyms, language-specific quirks, and CPU scales with candidates (200 max).
-If the catalog grew past ~10k, switch to MySQL FULLTEXT or an engine like Meilisearch.
+Known limits: no synonyms or abbreviations ("gta"), no stemming, hand-tuned weights, a linear-scan SQL pass (about 16 ms at 10k and
+145 ms at 100k products in the sandbox). Past ~50k products use a search engine (Meilisearch/Typesense/OpenSearch) or PostgreSQL `pg_trgm`.
 
 ---
 

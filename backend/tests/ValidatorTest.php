@@ -39,4 +39,10 @@ final class ValidatorTest extends TestCase
     {
         self::assertSame([], Validator::validate(null, ['page' => 'int|min:1']));
     }
+
+    public function testWhitespaceOnlyCountsAsMissing(): void
+    {
+        $this->expectException(ValidationException::class);
+        Validator::validate(['q' => "   \t "], ['q' => 'required|string']);
+    }
 }

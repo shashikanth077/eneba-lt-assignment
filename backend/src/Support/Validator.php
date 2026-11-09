@@ -29,7 +29,9 @@ final class Validator
 
         foreach ($rules as $field => $ruleString) {
             $rulesOfField = explode('|', $ruleString);
-            $present = array_key_exists($field, $input) && $input[$field] !== null && $input[$field] !== '';
+            $value = $input[$field] ?? null;
+            $value = is_string($value) ? trim($value) : $value; // "   " counts as missing, not as a value
+            $present = $value !== null && $value !== '';
 
             if (!$present) {
                 if (in_array('required', $rulesOfField, true)) {
@@ -38,7 +40,6 @@ final class Validator
                 continue;
             }
 
-            $value = is_string($input[$field]) ? trim($input[$field]) : $input[$field];
             foreach ($rulesOfField as $rule) {
                 $message = self::check($rule, $value, $rulesOfField);
                 if ($message !== null) {

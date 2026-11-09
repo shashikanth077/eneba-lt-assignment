@@ -17,6 +17,8 @@ return static function (App $app): void {
         $api->get('/products', [CatalogController::class, 'index']);
         $api->get('/products/{slug}', [CatalogController::class, 'show']);
         $api->get('/filters', [CatalogController::class, 'filters']);
+        $api->get('/search', [CatalogController::class, 'search']);
+        $api->get('/search/suggest', [CatalogController::class, 'suggest']);
 
         $api->get('/images/products/{slug}.svg', [ImageController::class, 'productCover']);
         $api->get('/images/banners/{slug}.svg', [ImageController::class, 'banner']);

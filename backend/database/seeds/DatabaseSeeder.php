@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeds;
 
+use App\Search\TextNormalizer;
 use App\Support\KeyCipher;
 use DateTimeImmutable;
 use PDO;
@@ -135,7 +136,7 @@ final class DatabaseSeeder
             };
 
             $rows[] = [
-                $slug, $title, $this->normalize($title), $description, $genre, $publisher, $release->format('Y-m-d'),
+                $slug, $title, TextNormalizer::normalize($title), $description, $genre, $publisher, $release->format('Y-m-d'),
                 $platformIds[$platformIndex], $regionIds[$regionIndex], SvgArt::cover($title, $art),
             ];
             $meta[$slug] = ['base_price' => $base, 'release' => $release->format('Y-m-d')];
@@ -283,13 +284,6 @@ final class DatabaseSeeder
         }
 
         return implode('-', $groups);
-    }
-
-    private function normalize(string $text): string
-    {
-        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text) ?: $text;
-
-        return trim(preg_replace('/\s+/', ' ', preg_replace('/[^a-z0-9 ]+/', ' ', strtolower($ascii))));
     }
 
     private function slugify(string $text): string

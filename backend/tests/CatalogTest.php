@@ -44,7 +44,7 @@ final class CatalogTest extends DbTestCase
 
         $echo = $body['items'][0];
         self::assertSame(
-            ['id', 'slug', 'name', 'coverUrl', 'platform', 'region', 'fromPriceCents', 'offerCount'],
+            ['id', 'slug', 'name', 'coverUrl', 'platform', 'region', 'fromPriceCents', 'offerCount', 'inStock'],
             array_keys($echo),
             'no discountPct key when the cheapest offer has no deal',
         );
@@ -54,6 +54,7 @@ final class CatalogTest extends DbTestCase
         self::assertSame(['slug' => 'global', 'name' => 'Global'], $echo['region']);
         self::assertSame(500, $echo['fromPriceCents']);
         self::assertSame(3, $echo['offerCount']);
+        self::assertTrue($echo['inStock']);
     }
 
     public function testFromPriceAndOfferCountIgnoreOffersWithoutKeysAndInactiveOnes(): void
@@ -278,7 +279,7 @@ final class CatalogTest extends DbTestCase
         self::assertSame(['product', 'offers'], array_keys($body));
         $product = $body['product'];
         self::assertSame(
-            ['id', 'slug', 'name', 'coverUrl', 'platform', 'region', 'fromPriceCents', 'offerCount', 'discountPct', 'description', 'releaseDate', 'genres', 'publisher'],
+            ['id', 'slug', 'name', 'coverUrl', 'platform', 'region', 'fromPriceCents', 'offerCount', 'inStock', 'discountPct', 'description', 'releaseDate', 'genres', 'publisher'],
             array_keys($product),
         );
         self::assertSame('Alpha', $product['name']);
@@ -329,6 +330,7 @@ final class CatalogTest extends DbTestCase
             self::assertSame([], $body['offers']);
             self::assertNull($body['product']['fromPriceCents']);
             self::assertSame(0, $body['product']['offerCount']);
+            self::assertFalse($body['product']['inStock']);
             self::assertArrayNotHasKey('discountPct', $body['product']);
         }
     }

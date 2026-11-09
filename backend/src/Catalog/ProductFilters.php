@@ -19,6 +19,9 @@ final class ProductFilters
      * @param list<string> $platforms
      * @param list<string> $regions
      * @param list<string> $genres
+     * @param list<int>|null $searchIds ranked product ids from a text search (best first); null = not searching.
+     *                                  An empty list means "searched, found nothing". Searching also lists
+     *                                  products that are out of stock.
      */
     public function __construct(
         public readonly array $platforms = [],
@@ -26,7 +29,14 @@ final class ProductFilters
         public readonly array $genres = [],
         public readonly ?int $priceMin = null,
         public readonly ?int $priceMax = null,
+        public readonly ?array $searchIds = null,
     ) {
+    }
+
+    /** @param list<int> $rankedIds */
+    public function withSearch(array $rankedIds): self
+    {
+        return new self($this->platforms, $this->regions, $this->genres, $this->priceMin, $this->priceMax, array_values($rankedIds));
     }
 
     /** @param array<string, mixed> $query */
@@ -96,6 +106,6 @@ final class ProductFilters
     public function isEmpty(): bool
     {
         return $this->platforms === [] && $this->regions === [] && $this->genres === []
-            && $this->priceMin === null && $this->priceMax === null;
+            && $this->priceMin === null && $this->priceMax === null && $this->searchIds === null;
     }
 }
