@@ -83,9 +83,15 @@ Conventions: JSON, prices as integer cents + `currency: "EUR"`, errors as
 requests require header `X-Requested-With: fetch` (CSRF, see 4).
 
 **Types** (abridged)
-`ProductCard = { id, slug, name, coverUrl, platform, region, fromPriceCents, offerCount, discountPct? }`
+`ProductCard = { id, slug, name, coverUrl, platform: {slug,name}, region: {slug,name}, fromPriceCents, offerCount, discountPct? }`
 `Offer = { id, seller: { id, name, rating }, priceCents, originalPriceCents?, stock, deliveryType: "instant" }`
 `User = { id, email, displayName }`
+
+Catalog rules (implemented): all prices are integer cents in one currency (EUR), so items carry no `currency` field.
+A product is a platform + region listing, so **region lives on the product, not on each offer**. Only *buyable* offers count
+(active and at least one available key): `fromPriceCents` is the cheapest of them, `offerCount` their number, and `discountPct`
+is the deal on that cheapest offer (key absent when it has none), so price and discount always agree. Products with no buyable
+offer are not listed but keep their page (`offers: []`, `fromPriceCents: null`). See `docs/QUERY_PLANS.md`.
 
 | Method | Path | Auth | Request | Response |
 |---|---|---|---|---|
@@ -93,10 +99,10 @@ requests require header `X-Requested-With: fetch` (CSRF, see 4).
 | POST | `/api/auth/login` | - | `{ email, password }` | `200 { user }` + sets cookie. `401 invalid_credentials` (same message for unknown email) |
 | POST | `/api/auth/logout` | - | - | `204`, clears cookie. Public and idempotent; a valid token is also revoked server-side (`token_version` bump) |
 | GET | `/api/auth/me` | U | - | `200 { user }` or `401` |
-| GET | `/api/products` | - | query: `q, platform[], region[], minPrice, maxPrice, sort (relevance\|price_asc\|price_desc\|popular\|newest), page, pageSize` | `200 { items: ProductCard[], page, pageSize, total }` |
-| GET | `/api/filters` | - | query: same filters (for counts) | `200 { platforms: [{value,count}], regions: [...], price: {min,max} }` |
+| GET | `/api/products` | - | query: `platform[]` (slug), `region[]` (slug), `genre[]` (name), `price_min`, `price_max` (cents, on the from price), `sort` (`popular` default \| `price_asc` \| `price_desc` \| `newest` \| `discount`), `page` (>=1), `pageSize` (1-48, default 24). Single values (`platform=steam`) work too. `q` / `relevance` arrive with the search task | `200 { items: ProductCard[], page, pageSize, total }`; a page past the end is `items: []`. `422` on invalid input (details per field) |
+| GET | `/api/filters` | - | query: the same filters (for counts) | `200 { platforms: [{value,label,count}], regions: [...], genres: [...], price: {min,max} }`. Each facet is counted with all filters except its own; zero-count options are dropped unless selected; `price` is `{min:null,max:null}` when nothing matches |
 | GET | `/api/search/suggest` | - | `?q=` (2+ chars) | `200 { suggestions: [{ slug, name, coverUrl, platform }] }` max 8 |
-| GET | `/api/products/{slug}` | - | - | `200 { product: { ...ProductCard, description, releaseDate, genres[], requirements? }, offers: Offer[] }` sorted by price asc. `404` |
+| GET | `/api/products/{slug}` | - | - | `200 { product: { ...ProductCard, description, releaseDate, genres[], publisher }, offers: Offer[] }`, offers buyable only, cheapest first. `404 not_found` for an unknown slug |
 | GET | `/api/home/layout` | - | - | `200 { blocks: [{ id, type, title, endpoint }] }` ordered |
 | GET | `/api/home/banners` | - | - | `200 { items: [{ id, imageUrl, title, subtitle, href }] }` |
 | GET | `/api/home/best-sellers` | - | - | `200 { items: ProductCard[] }` |

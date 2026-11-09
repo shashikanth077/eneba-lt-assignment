@@ -4,41 +4,17 @@ declare(strict_types=1);
 
 namespace Tests;
 
-use App\Support\Database;
-use App\Support\Migrator;
 use Firebase\JWT\JWT;
-use PDO;
-use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
-use Slim\Psr7\Factory\ServerRequestFactory;
-use Slim\Psr7\Factory\StreamFactory;
 
 /** Integration tests: real app, real database (keymart_test), no mocks. Skipped when the DB is unreachable. */
-final class AuthTest extends TestCase
+final class AuthTest extends DbTestCase
 {
     private const PASSWORD = 'correct horse 9';
 
-    private static PDO $pdo;
-    private static ?string $skipReason = null;
-
-    public static function setUpBeforeClass(): void
-    {
-        $_ENV['DB_NAME'] = getenv('TEST_DB_NAME') ?: 'keymart_test';
-        try {
-            $settings = (require __DIR__ . '/../config/settings.php')();
-            self::$pdo = Database::connect($settings['db']);
-            (new Migrator(self::$pdo, __DIR__ . '/../database/migrations'))->run();
-        } catch (\Throwable $e) {
-            self::$skipReason = 'Test database not reachable: ' . $e->getMessage();
-        }
-    }
-
     protected function setUp(): void
     {
-        if (self::$skipReason !== null) {
-            self::markTestSkipped(self::$skipReason);
-        }
-        $_ENV['DB_NAME'] = getenv('TEST_DB_NAME') ?: 'keymart_test';
+        parent::setUp();
         self::$pdo->exec('DELETE FROM login_attempts');
         self::$pdo->exec('DELETE FROM users');
     }
@@ -241,31 +217,5 @@ final class AuthTest extends TestCase
     private function get(string $path, ?string $token = null): ResponseInterface
     {
         return $this->send('GET', $path, null, $token);
-    }
-
-    /** @param array<string, mixed>|null $body @param array<string, string> $headers */
-    private function send(string $method, string $path, ?array $body, ?string $token = null, string $ip = '10.0.0.1', array $headers = []): ResponseInterface
-    {
-        $app = (require __DIR__ . '/../src/bootstrap.php')();
-        $request = (new ServerRequestFactory())->createServerRequest($method, $path, ['REMOTE_ADDR' => $ip])
-            ->withHeader('X-Requested-With', 'fetch');
-        if ($body !== null) {
-            $request = $request->withHeader('Content-Type', 'application/json')
-                ->withBody((new StreamFactory())->createStream(json_encode($body, JSON_THROW_ON_ERROR)));
-        }
-        if ($token !== null) {
-            $request = $request->withCookieParams(['session' => $token]);
-        }
-        foreach ($headers as $name => $value) {
-            $request = $request->withHeader($name, $value);
-        }
-
-        return $app->handle($request);
-    }
-
-    /** @return array<string, mixed> */
-    private function json(ResponseInterface $response): array
-    {
-        return json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
     }
 }

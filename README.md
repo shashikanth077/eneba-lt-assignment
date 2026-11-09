@@ -63,6 +63,14 @@ deals 34 · product_stats 120 · banners 4 · home_blocks 4
 Game keys look like `XXXXX-XXXXX-XXXXX` and are stored encrypted (libsodium, `KEY_ENCRYPTION_KEY`). Covers and
 banners are generated SVGs served from `/api/images/products/{slug}.svg` and `/api/images/banners/{slug}.svg`.
 
+## Catalog API
+```bash
+curl 'http://localhost:8080/api/products?platform[]=steam&genre=Action&price_max=3000&sort=discount&page=1&pageSize=12'
+curl 'http://localhost:8080/api/filters?platform[]=steam'        # option counts for the filter sidebar
+curl  http://localhost:8080/api/products/<slug>                  # details + every buyable offer, cheapest first
+```
+Prices are integer cents. Sorts: `popular` (default), `price_asc`, `price_desc`, `newest`, `discount`. Query plan and measurements: [docs/QUERY_PLANS.md](docs/QUERY_PLANS.md).
+
 ## Auth API: curl walkthrough
 Needs the API on :8080 and `COOKIE_SECURE=false` (the local default; `curl` does not send `Secure` cookies over
 plain http). Every state-changing request must send `X-Requested-With: fetch` (CSRF defence). `-c/-b jar.txt` keeps the cookie.

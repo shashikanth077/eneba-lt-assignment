@@ -67,9 +67,9 @@ final class Validator
             'int' => is_int($value) || (is_string($value) && preg_match('/^-?\d+$/', $value) === 1) ? null : 'Must be an integer',
             'bool' => is_bool($value) ? null : 'Must be true or false',
             'email' => is_string($value) && filter_var($value, FILTER_VALIDATE_EMAIL) !== false ? null : 'Must be a valid email address',
-            'in' => in_array((string) $value, explode(',', (string) $arg), true) ? null : 'Must be one of: ' . $arg,
-            'min' => self::size($value, $all) >= (int) $arg ? null : 'Must be at least ' . $arg . (self::isNumeric($all) ? '' : ' characters'),
-            'max' => self::size($value, $all) <= (int) $arg ? null : 'Must be at most ' . $arg . (self::isNumeric($all) ? '' : ' characters'),
+            'in' => is_scalar($value) && in_array((string) $value, explode(',', (string) $arg), true) ? null : 'Must be one of: ' . $arg,
+            'min' => !is_scalar($value) || self::size($value, $all) >= (int) $arg ? null : 'Must be at least ' . $arg . (self::isNumeric($all) ? '' : ' characters'),
+            'max' => !is_scalar($value) || self::size($value, $all) <= (int) $arg ? null : 'Must be at most ' . $arg . (self::isNumeric($all) ? '' : ' characters'),
             default => null, // required / nullable are handled by the caller
         };
     }

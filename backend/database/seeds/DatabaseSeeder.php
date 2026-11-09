@@ -185,7 +185,8 @@ final class DatabaseSeeder
                 $plan[] = ['product' => $product['id'], 'seller' => $sellerId, 'keys' => $rng->int(20, 50)];
             }
             if ($rng->chance(0.30)) {
-                $sellerId = $rng->pick($chosen);
+                $rng->pick($chosen); // keep the random stream identical to earlier versions of this seeder
+                $sellerId = array_search(min($prices), $prices, true); // a discounted offer is the cheapest one
                 $pct = $rng->int(1, 12) * 5; // 5..60
                 // Keep the crossed-out price believable (<= 89.99): shrink the discount instead of inflating the price.
                 while ($pct >= 5 && $prices[$sellerId] / (1 - $pct / 100) > 8999) {
@@ -230,6 +231,9 @@ final class DatabaseSeeder
             $dealPlan,
         );
         $this->upsert('deals', ['offer_id', 'original_price_cents', 'discount_pct'], $dealRows, ['original_price_cents', 'discount_pct']);
+        // Deals are seed-owned: drop any left over from an older version of the plan.
+        $keep = array_column($dealRows, 0);
+        $this->pdo->prepare('DELETE FROM deals WHERE offer_id NOT IN (' . implode(',', array_fill(0, count($keep), '?')) . ')')->execute($keep);
 
         $this->insertIgnore('product_stats', ['product_id', 'units_sold', 'view_count', 'popularity'], $stats);
     }
