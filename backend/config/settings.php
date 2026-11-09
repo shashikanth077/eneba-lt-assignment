@@ -29,6 +29,15 @@ return static function (): array {
             'login_max_per_ip' => (int) $env('LOGIN_MAX_FAILURES_PER_IP', '20'),
             'login_window_seconds' => (int) $env('LOGIN_WINDOW_SECONDS', '900'),
         ],
+        'stripe' => [
+            'secret_key' => $env('STRIPE_SECRET_KEY'),            // sk_test_...
+            'webhook_secret' => $env('STRIPE_WEBHOOK_SECRET'),    // whsec_... (from `stripe listen` or the dashboard endpoint)
+            'webhook_tolerance' => (int) $env('STRIPE_WEBHOOK_TOLERANCE', '300'),
+        ],
+        'checkout' => [
+            'currency' => strtolower($env('CHECKOUT_CURRENCY', 'eur')),
+            'reservation_minutes' => (int) $env('RESERVATION_MINUTES', '15'),
+        ],
         'cache' => [
             'driver' => $env('CACHE_DRIVER', 'file'), // file | none
             'dir' => $env('CACHE_DIR', sys_get_temp_dir() . '/keymart-cache'),

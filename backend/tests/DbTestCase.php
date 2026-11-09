@@ -17,6 +17,9 @@ use Slim\Psr7\Factory\StreamFactory;
 abstract class DbTestCase extends TestCase
 {
     protected static PDO $pdo;
+
+    /** @var array<string, mixed> container definitions to replace for the next requests (e.g. a fake payment gateway) */
+    protected array $containerOverrides = [];
     private static ?string $skipReason = null;
 
     public static function setUpBeforeClass(): void
@@ -50,7 +53,7 @@ abstract class DbTestCase extends TestCase
     /** @param array<string, mixed>|null $body @param array<string, string> $headers */
     protected function send(string $method, string $path, ?array $body = null, ?string $token = null, string $ip = '10.0.0.1', array $headers = []): ResponseInterface
     {
-        $app = (require __DIR__ . '/../src/bootstrap.php')();
+        $app = (require __DIR__ . '/../src/bootstrap.php')($this->containerOverrides);
         $request = (new ServerRequestFactory())->createServerRequest($method, $path, ['REMOTE_ADDR' => $ip])
             ->withHeader('X-Requested-With', 'fetch');
         if ($body !== null) {
@@ -60,6 +63,20 @@ abstract class DbTestCase extends TestCase
         if ($token !== null) {
             $request = $request->withCookieParams(['session' => $token]);
         }
+        foreach ($headers as $name => $value) {
+            $request = $request->withHeader($name, $value);
+        }
+
+        return $app->handle($request);
+    }
+
+    /** A request exactly as Stripe sends it: raw body, its own headers, and NO browser headers (no cookie, no X-Requested-With). */
+    protected function sendRaw(string $method, string $path, string $rawBody, array $headers = []): ResponseInterface
+    {
+        $app = (require __DIR__ . '/../src/bootstrap.php')($this->containerOverrides);
+        $request = (new ServerRequestFactory())->createServerRequest($method, $path, ['REMOTE_ADDR' => '54.187.174.169'])
+            ->withHeader('Content-Type', 'application/json')
+            ->withBody((new StreamFactory())->createStream($rawBody));
         foreach ($headers as $name => $value) {
             $request = $request->withHeader($name, $value);
         }

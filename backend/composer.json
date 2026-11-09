@@ -11,6 +11,7 @@
         "php-di/slim-bridge": "^3.4",
         "slim/psr7": "^1.7",
         "slim/slim": "^4.14",
+        "stripe/stripe-php": "^22.1",
         "vlucas/phpdotenv": "^5.6"
     },
     "require-dev": {

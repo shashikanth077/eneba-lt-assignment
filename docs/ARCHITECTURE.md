@@ -18,7 +18,7 @@ Where I disagree or tightened them, it is flagged with **CHALLENGE** and summari
 | Homepage as config-driven blocks (banner, best sellers, deals, new releases) | **In** | Explicit requirement and the best place to show architecture. |
 | Fuzzy search + live suggestions | **In** | Explicit; done server-side so it works the same from every page. |
 | Product page with multi-seller offer comparison | **In** | Core of a marketplace; offers are the unit that is bought. |
-| Cart (client-side) with server-side re-pricing | **In** | Guests can fill a cart; the server never trusts client prices. |
+| Cart (server-side, signed-in users) with live pricing | **In** | One truth for prices and stock; the client never sends an amount. |
 | Checkout, Stripe PaymentIntent + webhook, key delivery | **In** | The most valuable and riskiest flow; gets the most care and tests. |
 | Auth: register, login, logout, me, protected routes | **In** | Required; checkout and orders need identity. |
 | Order history with revealed keys | **In** | Required by the flow ("Order and key"). |
@@ -32,7 +32,6 @@ Where I disagree or tightened them, it is flagged with **CHALLENGE** and summari
 | Multi-currency, i18n | **Out** | Single currency (EUR, integer cents) removes a whole class of rounding bugs. |
 | Refund UI, disputes | **Out** | Backend can refund automatically in one failure path (see 5); no UI. |
 | Real microservices for homepage blocks | **Out** | One PHP app, separate modules/endpoints/tables per block (see 6); infra cost is not worth it. |
-| Server-side cart | **Out** | Client cart + `/cart/quote` is fewer endpoints and tables; see question 3. |
 | SEO / SSR | **Out** | SPA on Vercel is fine for an assignment; stated as a known limitation. |
 
 ---
@@ -110,12 +109,14 @@ offer are not listed but keep their page (`offers: []`, `fromPriceCents: null`).
 | GET | `/api/home/best-sellers` | - | - | `200 { items: ProductCard[] }` by units sold, buyable products only, `limit` from the row config (1-50); `404` when disabled |
 | GET | `/api/home/deals` | - | - | `200 { items: (ProductCard & { originalPriceCents })[] }` products whose cheapest buyable offer is on an unexpired deal, biggest discount first; `404` when disabled |
 | GET | `/api/home/new-releases` | - | - | `200 { items: ProductCard[] }` already released, newest first, buyable only; `404` when disabled |
-| POST | `/api/cart/quote` | - | `{ items: [{ offerId, qty }] }` | `200 { lines: [{ offerId, productName, sellerName, unitCents, qty, lineCents, available }], totalCents, issues: [{ offerId, code: "out_of_stock"\|"price_changed"\|"inactive", message }] }` |
-| POST | `/api/checkout` | U | `{ items: [{ offerId, qty }] }` | `201 { orderId, clientSecret, totalCents, reservedUntil }`. `409 out_of_stock` (with offending offer ids). Reserves keys, creates PaymentIntent |
-| POST | `/api/stripe/webhook` | Stripe signature | raw Stripe event | `200 {}` always after verification (idempotent). `400` bad signature |
-| POST | `/api/orders/{id}/sync` | U (owner) | - | `200 { order }`. Fetches the PaymentIntent from Stripe and runs the same finalize routine as the webhook |
-| GET | `/api/orders` | U | `?page` | `200 { items: [{ id, status, totalCents, createdAt, itemCount }] }` |
-| GET | `/api/orders/{id}` | U (owner) | - | `200 { order: { id, status, totalCents, reservedUntil?, items: [{ productName, sellerName, qty, keys?: string[] }] } }`. `keys` present **only** when `status = paid`. Others' orders return `404` |
+| GET | `/api/cart` | U | - | `200 { lines: [{ offerId, productSlug, productName, sellerName, unitCents, qty, lineCents, available }], totalCents, currency, issues: [{ offerId, code: "inactive"\|"out_of_stock"\|"insufficient_stock", message }] }`, prices and stock read live |
+| POST | `/api/cart` | U | `{ offerId, qty? }` | `201` the cart; `404` unknown offer, `409 insufficient_stock`, `422` qty 1-5 / max 20 lines |
+| PATCH | `/api/cart/{offerId}` | U | `{ qty }` | `200` the cart |
+| DELETE | `/api/cart/{offerId}` \| `/api/cart` | U | - | `200` the cart (one line removed / emptied) |
+| POST | `/api/checkout` | U | none (built from the server-side cart) | `201 { orderId, clientSecret, totalCents, currency, reservedUntil }`. `409 out_of_stock` with `details.items`, `422 cart_empty`, `502 payment_provider_error`, `503 payments_unavailable`. Reserves keys (SKIP LOCKED), creates the PaymentIntent for the server's amount |
+| POST | `/api/webhooks/stripe` | Stripe signature | raw Stripe event | `200 { received: true }` after verification (idempotent). `400 invalid_signature`, `503 webhook_not_configured` |
+| GET | `/api/orders` | U | `?page, pageSize` | `200 { items: [{ id, status, totalCents, createdAt, itemCount }], page, pageSize, total }` newest first |
+| GET | `/api/orders/{id}` | U (owner) | - | `200 { order: { id, status, totalCents, currency, createdAt, reservedUntil? (pending), paidAt? (paid), items: [{ productSlug, productName, sellerName, unitPriceCents, qty, keys?: string[] }] } }`. `keys` present **only** when `status = paid` and the order is the caller's. Others' orders return `404` |
 | GET | `/api/images/products/{slug}.svg` | - | - | `200 image/svg+xml` generated cover (stored in `products.cover_svg`), `404` |
 | GET | `/api/images/banners/{slug}.svg` | - | - | `200 image/svg+xml` banner artwork, `404` |
 | GET | `/api/health` | - | - | `200 { status: "ok", db: "ok" }` |
@@ -156,6 +157,8 @@ load should show skeletons rather than hang.
 ---
 
 ## 5. Payment and key allocation
+
+> **As built: see `docs/CHECKOUT.md`** (flow, states, concurrency, failure matrix, Stripe test steps). Differences from the plan below: the cart is server-side (so `POST /api/checkout` has no body), the webhook lives at `/api/webhooks/stripe`, and the `POST /orders/{id}/sync` fallback was not built.
 
 ### Data used
 `offers` (price, seller) -> `game_keys` (one row per sellable key: `offer_id`, `key_enc`,
@@ -278,7 +281,7 @@ replaces the earlier idea of an `original_price_cents` column on offers), `produ
 view_count, popularity: source for best sellers and popularity sort), `game_keys` (offer_id, `key_enc`
 libsodium-encrypted, `key_hash` sha256 for dedupe, status, order_id, reserved_until).
 Homepage: `banners` (with generated `image_svg`), `home_blocks` (slug, type, title, endpoint, position, enabled, config JSON).
-Still to come with checkout: `orders`, `order_items`, `stripe_events` (and the FK `game_keys.order_id`).
+Checkout: `cart_items` (user, offer, qty; prices never stored), `orders` (status ENUM pending/paid/failed/expired/canceled/refund_needed/refunded, total, `stripe_payment_intent_id` UNIQUE, `reserved_until`, `paid_at`, `failure_reason`), `order_items` (a name/price snapshot), `stripe_events` (event id PK) and the FK `game_keys.order_id`. All datetimes are UTC.
 
 Plain SQL migrations live in `backend/database/migrations` and are applied by `php bin/migrate.php` (tracked in
 `schema_migrations`). `php bin/seed.php` runs them first, then generates deterministic demo data from
@@ -308,7 +311,7 @@ needs no file storage. Money is `INT` cents everywhere.
    (Figma/screens), or should I derive tokens (dark navy/purple palette, typography) from eneba.com directly?
 2. **Hosting:** may I assume Vercel (frontend) + Render Docker (API) + an external free MySQL (e.g. Aiven or
    TiDB Cloud)? Which one, and is a ~50 s cold start acceptable for the grader?
-3. **Cart:** is a client-side (persisted) cart with `/cart/quote` OK instead of a server-side cart? A guest
+3. **Cart (decided: server-side, signed-in users only):** was: is a client-side (persisted) cart with `/cart/quote` OK instead of a server-side cart? A guest
    cart then survives login with no merge logic.
 4. **Seed volume:** is roughly 40-60 products, 3-6 sellers and a few keys per offer acceptable, with keys
    being fake strings like `XXXXX-XXXXX-XXXXX`?

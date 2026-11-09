@@ -71,6 +71,18 @@ curl  http://localhost:8080/api/products/<slug>                  # details + eve
 ```
 Prices are integer cents. Sorts: `popular` (default), `price_asc`, `price_desc`, `newest`, `discount`. Query plan and measurements: [docs/QUERY_PLANS.md](docs/QUERY_PLANS.md).
 
+## Cart, checkout and orders
+Server-side cart, Stripe test-mode payment, key delivery. Every route needs the session cookie (see the Auth walkthrough); the Stripe webhook needs a signature instead.
+```bash
+curl -b jar.txt -H 'X-Requested-With: fetch' -H 'Content-Type: application/json' -d '{"offerId": 1, "qty": 2}' localhost:8080/api/cart   # add
+curl -b jar.txt localhost:8080/api/cart                                                                                               # live prices + stock issues
+curl -b jar.txt -H 'X-Requested-With: fetch' -X POST localhost:8080/api/checkout    # reserves keys, returns { orderId, clientSecret, totalCents, reservedUntil }
+curl -b jar.txt localhost:8080/api/orders/1                                         # keys only appear once the order is paid, and only for its owner
+```
+Needs `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` (test mode) in `.env`; without a key checkout answers `503 payments_unavailable`.
+How to pay a test order with the Stripe CLI (and why `stripe trigger payment_intent.succeeded` alone will not mark your order paid), the concurrency design and the failure
+matrix: [docs/CHECKOUT.md](docs/CHECKOUT.md).
+
 ## Homepage API
 ```bash
 curl http://localhost:8080/api/home/layout          # enabled blocks, in order: { blocks: [{ id, type, title, endpoint, config }] }
