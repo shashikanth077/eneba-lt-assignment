@@ -34,7 +34,12 @@ final class JsonErrorHandler
         $response = $this->responses->createResponse();
 
         if ($e instanceof ApiException) {
-            return JsonResponse::error($response, $e->status(), $e->errorCode(), $e->getMessage(), $e->details());
+            $details = $e->details();
+            if ($e->status() === 429 && isset($details['retryAfterSeconds'])) {
+                $response = $response->withHeader('Retry-After', (string) $details['retryAfterSeconds']);
+            }
+
+            return JsonResponse::error($response, $e->status(), $e->errorCode(), $e->getMessage(), $details);
         }
         if ($e instanceof HttpNotFoundException) {
             return JsonResponse::error($response, 404, 'not_found', 'Resource not found');

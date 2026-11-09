@@ -10,11 +10,26 @@ use Slim\Psr7\Factory\ServerRequestFactory;
 
 final class ApiTest extends TestCase
 {
+    /** @var array<string, mixed> */
+    private array $savedEnv = [];
+
     protected function setUp(): void
     {
         // Point the DB at a closed port so the "database down" path is deterministic.
-        foreach (['DB_HOST' => '127.0.0.1', 'DB_PORT' => '1', 'CORS_ALLOWED_ORIGINS' => 'http://localhost:5173', 'APP_DEBUG' => 'false'] as $k => $v) {
+        foreach (['DB_HOST' => '127.0.0.1', 'DB_PORT' => '1', 'CORS_ALLOWED_ORIGINS' => 'http://localhost:5173'] as $k => $v) {
+            $this->savedEnv[$k] = $_ENV[$k] ?? null;
             $_ENV[$k] = $v;
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        foreach ($this->savedEnv as $k => $v) {
+            if ($v === null) {
+                unset($_ENV[$k]);
+            } else {
+                $_ENV[$k] = $v;
+            }
         }
     }
 
@@ -46,7 +61,7 @@ final class ApiTest extends TestCase
 
     public function testWrongMethodUsesErrorFormat(): void
     {
-        $response = $this->call('POST', '/api/health');
+        $response = $this->call('POST', '/api/health', ['X-Requested-With' => 'fetch']);
 
         self::assertSame(405, $response->getStatusCode());
         self::assertSame('method_not_allowed', $this->json($response)['error']['code']);

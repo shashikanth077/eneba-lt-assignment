@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\JsonErrorHandler;
 use App\Middleware\CorsMiddleware;
+use App\Middleware\CsrfMiddleware;
 use DI\Bridge\Slim\Bridge;
 use Dotenv\Dotenv;
 use Slim\App;
@@ -22,6 +23,8 @@ return static function (): App {
     // Middleware runs last-added-first: CORS wraps everything, so error responses get CORS headers too.
     $app->addRoutingMiddleware();
     $app->addBodyParsingMiddleware();
+    $allowedOrigins = array_values(array_filter([...$settings['cors']['origins'], $settings['app_url']]));
+    $app->add(new CsrfMiddleware($allowedOrigins)); // Stripe webhook path will be exempted when it exists
     $errors = $app->addErrorMiddleware($settings['debug'], false, false);
     $errors->setDefaultErrorHandler(
         static fn ($request, Throwable $e) => (new JsonErrorHandler($responses, $settings['debug']))($request, $e)

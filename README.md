@@ -6,7 +6,8 @@ digital key delivery, and authentication. "KEYMART" is a placeholder brand name.
 
 - Scope, API, payment flow, risks: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Design reference and component inventory: [docs/DESIGN_TOKENS.md](docs/DESIGN_TOKENS.md)
-- Project rules for the AI agent: [CLAUDE.md](CLAUDE.md); full AI chat log: [docs/ai-log/](docs/ai-log/)
+- Project rules for the AI agent: [CLAUDE.md](CLAUDE.md)
+- **AI usage for review:** full chat history (all prompts and replies) in [docs/CHAT_HISTORY.md](docs/CHAT_HISTORY.md); per-task prompt + summary in [docs/ai-log/](docs/ai-log/)
 
 ## Stack
 PHP 8.3 + Slim 4 + PHP-DI + PDO, MySQL 8 · React + TypeScript + Vite, Redux Toolkit (RTK Query), MUI.
@@ -43,6 +44,59 @@ php -S localhost:8080 -t public public/index.php
 # frontend (second terminal)
 cd frontend && cp .env.example .env && npm install && npm run dev
 ```
+
+## Database, demo data and tests
+```bash
+docker compose exec php php bin/migrate.php   # creates the tables (bin/seed.php also does this)
+docker compose exec php php bin/seed.php      # demo data, safe to run again
+docker compose exec php composer test         # PHPUnit; uses the keymart_test database
+```
+Without Docker, run the same commands from `backend/` (for tests create a `keymart_test` database the DB user can
+use, or set `TEST_DB_NAME`). If your MySQL volume existed before this setup, create it once:
+`docker compose exec mysql mysql -uroot -proot -e "CREATE DATABASE keymart_test; GRANT ALL ON keymart_test.* TO 'keymart'@'%'"`.
+
+`bin/seed.php` is deterministic (seeded RNG) and idempotent, and prints row counts:
+```
+platforms 6 · regions 5 · sellers 12 · products 120 · offers 408 · game_keys 14391
+deals 34 · product_stats 120 · banners 4 · home_blocks 4
+```
+Game keys look like `XXXXX-XXXXX-XXXXX` and are stored encrypted (libsodium, `KEY_ENCRYPTION_KEY`). Covers and
+banners are generated SVGs served from `/api/images/products/{slug}.svg` and `/api/images/banners/{slug}.svg`.
+
+## Auth API: curl walkthrough
+Needs the API on :8080 and `COOKIE_SECURE=false` (the local default; `curl` does not send `Secure` cookies over
+plain http). Every state-changing request must send `X-Requested-With: fetch` (CSRF defence). `-c/-b jar.txt` keeps the cookie.
+```bash
+API=http://localhost:8080/api/auth
+H='-H X-Requested-With:fetch -H Content-Type:application/json'
+
+# 1. register -> 201 + Set-Cookie: session=<jwt>; HttpOnly; SameSite=Lax (+ Secure in production)
+curl -i -c jar.txt $H -d '{"email":"ana@example.com","password":"correct horse 9","displayName":"Ana"}' $API/register
+
+# 2. who am I? -> {"user":{"id":1,"email":"ana@example.com","displayName":"Ana"}}
+curl -b jar.txt $API/me
+
+# 3. same email again -> 409 email_taken
+curl $H -d '{"email":"ANA@example.com","password":"another pass 1","displayName":"Ana"}' $API/register
+
+# 4. wrong password and unknown email give the SAME 401 invalid_credentials body
+curl $H -d '{"email":"ana@example.com","password":"wrong wrong 1"}' $API/login
+curl $H -d '{"email":"ghost@example.com","password":"wrong wrong 1"}' $API/login
+
+# 5. login -> 200 + new cookie
+curl -i -c jar.txt $H -d '{"email":"ana@example.com","password":"correct horse 9"}' $API/login
+
+# 6. no X-Requested-With header -> 403 csrf_rejected
+curl -d '{}' -H Content-Type:application/json $API/login
+
+# 7. logout -> 204, cookie cleared and the token revoked server-side; /me is now 401
+curl -i -b jar.txt -c jar.txt $H -X POST $API/logout
+curl -b jar.txt $API/me
+
+# 8. five wrong passwords in a row (same IP + email) -> the sixth attempt is 429 with a Retry-After header
+for i in 1 2 3 4 5 6; do curl -s -o /dev/null -w '%{http_code} ' $H -d '{"email":"ana@example.com","password":"nope nope 1"}' $API/login; done
+```
+Expected output of step 8: `401 401 401 401 401 429`.
 
 ## Checks
 ```bash

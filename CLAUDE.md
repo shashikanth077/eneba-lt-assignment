@@ -19,7 +19,7 @@ Deliverables: GitHub link, public free-tier deployment URL, full AI chat log (do
 - Payments: Stripe test mode only. Email: EmailJS.
 
 ## Folder layout
-- /backend  PHP API (src/, public/index.php, migrations/, seeds/, tests/)
+- /backend  PHP API (src/, public/index.php, bin/, database/{migrations,seeds}, tests/)
 - /frontend React app (src/features/<name>, src/app, src/components, src/theme)
 - /docs     Architecture, decisions, scope justifications, and ai-log/
 - /docs/ai-log/P<number>.md  One file per task (see AI log rule)

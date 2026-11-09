@@ -91,7 +91,7 @@ requests require header `X-Requested-With: fetch` (CSRF, see 4).
 |---|---|---|---|---|
 | POST | `/api/auth/register` | - | `{ email, password, displayName }` | `201 { user }` + sets cookie. `409 email_taken`, `422` validation |
 | POST | `/api/auth/login` | - | `{ email, password }` | `200 { user }` + sets cookie. `401 invalid_credentials` (same message for unknown email) |
-| POST | `/api/auth/logout` | U | - | `204`, clears cookie |
+| POST | `/api/auth/logout` | - | - | `204`, clears cookie. Public and idempotent; a valid token is also revoked server-side (`token_version` bump) |
 | GET | `/api/auth/me` | U | - | `200 { user }` or `401` |
 | GET | `/api/products` | - | query: `q, platform[], region[], minPrice, maxPrice, sort (relevance\|price_asc\|price_desc\|popular\|newest), page, pageSize` | `200 { items: ProductCard[], page, pageSize, total }` |
 | GET | `/api/filters` | - | query: same filters (for counts) | `200 { platforms: [{value,count}], regions: [...], price: {min,max} }` |
@@ -108,6 +108,8 @@ requests require header `X-Requested-With: fetch` (CSRF, see 4).
 | POST | `/api/orders/{id}/sync` | U (owner) | - | `200 { order }`. Fetches the PaymentIntent from Stripe and runs the same finalize routine as the webhook |
 | GET | `/api/orders` | U | `?page` | `200 { items: [{ id, status, totalCents, createdAt, itemCount }] }` |
 | GET | `/api/orders/{id}` | U (owner) | - | `200 { order: { id, status, totalCents, reservedUntil?, items: [{ productName, sellerName, qty, keys?: string[] }] } }`. `keys` present **only** when `status = paid`. Others' orders return `404` |
+| GET | `/api/images/products/{slug}.svg` | - | - | `200 image/svg+xml` generated cover (stored in `products.cover_svg`), `404` |
+| GET | `/api/images/banners/{slug}.svg` | - | - | `200 image/svg+xml` banner artwork, `404` |
 | GET | `/api/health` | - | - | `200 { status: "ok", db: "ok" }` |
 
 Status codes: `401` not signed in, `403` wrong owner (we use `404` to avoid leaking ids), `409` stock/state
@@ -127,7 +129,9 @@ conflict, `422` validation, `429` rate limited (login/register/suggest).
 - **Frontend:** the SPA cannot read the cookie, so it asks `GET /api/auth/me` on boot (RTK Query) and keeps
   the user in the store. Protected routes redirect to `/login?next=...`. UI guards are convenience only;
   the API enforces `U` on every protected route.
-- **Rate limiting:** a small DB-backed counter (IP + email) on login/register.
+- **Rate limiting (implemented):** failed logins are counted in `login_attempts` (sliding 15 min window): 5 per (IP + email) and 20 per IP, then `429 too_many_attempts` with `retryAfterSeconds`. Unknown emails are counted exactly like real ones, and unknown emails are verified against a dummy hash, so neither status, body nor timing reveals whether an account exists. Registration is not rate-limited yet (known gap).
+- **Revocation (implemented):** logout bumps `users.token_version`, so the old JWT is dead server-side. Trade-off: this also signs the user out on their other devices.
+- **Registration vs enumeration:** `register` answers `409 email_taken`, which does reveal that an email exists. That is the usual trade-off for a clear sign-up UX; login never reveals it.
 - **EmailJS:** runs in the browser with a public key, so anything sent through it is public in effect.
   It is used only for a welcome email and an order receipt that says *"your key is in your account"*,
   never the key itself, never reset links.
@@ -261,13 +265,25 @@ If the catalog grew past ~10k, switch to MySQL FULLTEXT or an engine like Meilis
 
 ---
 
-## 8. Data model (summary)
+## 8. Data model (as built)
 
-`users`, `sellers`, `products` (name, name_norm, slug, platform, region, description, release_date,
-popularity), `offers` (product_id, seller_id, price_cents, original_price_cents, active),
-`game_keys`, `orders`, `order_items`, `stripe_events`, `home_blocks`, `banners`, `login_attempts`.
-Plain SQL migrations in `/backend/migrations`, run by a tiny script; one seed script creates products,
-sellers, offers and encrypted keys. Money is `INT` cents everywhere.
+Auth: `users` (email UNIQUE, argon2id `password_hash`, `token_version`), `login_attempts`.
+Catalog: `platforms`, `regions`, `sellers`, `products` (slug, name, `name_norm`, description, genre, publisher,
+release_date, platform_id, region_id, `cover_svg`), `offers` (product_id, seller_id, price_cents; UNIQUE per
+product+seller), `deals` (offer_id, original_price_cents, discount_pct: **its own source for the deals block**,
+replaces the earlier idea of an `original_price_cents` column on offers), `product_stats` (units_sold,
+view_count, popularity: source for best sellers and popularity sort), `game_keys` (offer_id, `key_enc`
+libsodium-encrypted, `key_hash` sha256 for dedupe, status, order_id, reserved_until).
+Homepage: `banners` (with generated `image_svg`), `home_blocks` (slug, type, title, endpoint, position, enabled, config JSON).
+Still to come with checkout: `orders`, `order_items`, `stripe_events` (and the FK `game_keys.order_id`).
+
+Plain SQL migrations live in `backend/database/migrations` and are applied by `php bin/migrate.php` (tracked in
+`schema_migrations`). `php bin/seed.php` runs them first, then generates deterministic demo data from
+`backend/database/seeds` (seeded xorshift RNG): 6 platforms, 5 regions, 12 sellers, 120 products, 2-5 offers each
+(about 408), 20-50 keys per offer (about 14.4k, encrypted), about 34 deals, product stats, 4 banners, 4 home blocks.
+It is idempotent (upserts by natural key; existing keys and stats are never overwritten, so a sold key stays sold).
+Covers and banners are generated SVGs stored in the database and served by the images endpoints, so deployment
+needs no file storage. Money is `INT` cents everywhere.
 
 ---
 
