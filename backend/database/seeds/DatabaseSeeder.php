@@ -244,7 +244,7 @@ final class DatabaseSeeder
         $rng = new Prng(self::SEED + 8);
         $rows = [];
         foreach (CatalogData::BANNERS as $position => [$slug, $title, $subtitle, $cta, $href]) {
-            $rows[] = [$slug, $title, $subtitle, $cta, $href, SvgArt::banner($title, $subtitle, $rng), $position + 1];
+            $rows[] = [$slug, $title, $subtitle, $cta, $href, SvgArt::banner($title, $rng), $position + 1];
         }
         $this->upsert('banners', ['slug', 'title', 'subtitle', 'cta_label', 'href', 'image_svg', 'position'], $rows, ['title', 'subtitle', 'cta_label', 'href', 'image_svg', 'position']);
     }

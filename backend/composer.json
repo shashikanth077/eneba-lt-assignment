@@ -4,7 +4,7 @@
     "type": "project",
     "license": "proprietary",
     "require": {
-        "php": ">=8.3",
+        "php": ">=8.2",
         "ext-pdo": "*",
         "firebase/php-jwt": "^7.2",
         "php-di/php-di": "^7.0",

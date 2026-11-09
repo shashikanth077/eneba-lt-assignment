@@ -18,7 +18,10 @@ return static function (): array {
             'name' => $env('DB_NAME', 'keymart'),
             'user' => $env('DB_USER', 'keymart'),
             'pass' => $env('DB_PASS', ''),
+            'lock_strategy' => $env('LOCK_STRATEGY', 'auto'), // auto | skip | wait (see App\Support\LockStrategy)
         ],
+        // Only needed when the API is NOT at the root of its host, e.g. XAMPP's http://localhost/keymart/backend/public
+        'base_path' => rtrim($env('APP_BASE_PATH', ''), '/'),
         'app_url' => $env('APP_URL'),
         'auth' => [
             'jwt_secret' => $env('JWT_SECRET'),

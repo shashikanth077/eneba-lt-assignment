@@ -6,6 +6,7 @@ digital key delivery, and authentication. "KEYMART" is a placeholder brand name.
 
 - Scope, API, payment flow, risks: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Design reference and component inventory: [docs/DESIGN_TOKENS.md](docs/DESIGN_TOKENS.md)
+- **Running on XAMPP** (PHP 8.2+, MariaDB/MySQL, setup + doctor scripts): [docs/XAMPP.md](docs/XAMPP.md)
 - Project rules for the AI agent: [CLAUDE.md](CLAUDE.md)
 - **AI usage for review:** full chat history (all prompts and replies) in [docs/CHAT_HISTORY.md](docs/CHAT_HISTORY.md); per-task prompt + summary in [docs/ai-log/](docs/ai-log/)
 
@@ -35,10 +36,12 @@ Optional phpMyAdmin at http://localhost:8081: `docker compose --profile tools up
 Reset the database: `docker compose down -v`.
 
 ## Run without Docker
-Needs PHP 8.3 (with `pdo_mysql`), Composer, MySQL 8 and Node 22.
+Needs PHP 8.2+ (with `pdo_mysql`), Composer, MySQL 8 or MariaDB 10.4+ (XAMPP works, see [docs/XAMPP.md](docs/XAMPP.md)) and Node 22.
 ```bash
 # backend
-cd backend && cp .env.example .env && composer install
+cd backend && cp .env.example .env && composer install   # XAMPP: copy .env.xampp.example instead
+php bin/setup.php     # creates the database if missing, migrates, loads demo data
+php bin/doctor.php    # checks PHP, extensions, secrets, database, migrations and says what to fix
 php -S localhost:8080 -t public public/index.php
 
 # frontend (second terminal)

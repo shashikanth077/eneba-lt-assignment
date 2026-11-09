@@ -1,3 +1,6 @@
+# Apache (XAMPP): send every request that is not a real file to the front controller.
+# Needs mod_rewrite (enabled in XAMPP) and AllowOverride All for this folder (XAMPP's default for htdocs).
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]

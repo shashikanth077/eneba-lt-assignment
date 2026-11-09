@@ -16,9 +16,13 @@ interface QueryBoundaryProps<T> {
   query: QueryLike<T>;
   /** Decides whether the loaded data counts as "nothing to show". Omit when data is never empty. */
   isEmpty?: (data: T) => boolean;
+  /** Shown when `isEmpty` says so. `null` renders nothing at all; leave it out for a generic empty state. */
   empty?: ReactNode;
+  /** Replaces the spinner, e.g. with a skeleton shaped like the content. */
+  loading?: ReactNode;
   loadingLabel?: string;
   errorTitle?: string;
+  errorMinHeight?: number | string;
   children: (data: T) => ReactNode;
 }
 
@@ -30,21 +34,25 @@ export function QueryBoundary<T>({
   query,
   isEmpty,
   empty,
+  loading,
   loadingLabel,
   errorTitle,
+  errorMinHeight,
   children,
 }: QueryBoundaryProps<T>) {
   if (query.data !== undefined) {
-    return isEmpty?.(query.data) ? (
-      (empty ?? <EmptyState title="Nothing here yet" />)
-    ) : (
-      <>{children(query.data)}</>
-    );
+    if (!isEmpty?.(query.data)) return <>{children(query.data)}</>;
+    return empty === undefined ? <EmptyState title="Nothing here yet" /> : <>{empty}</>; // null = render nothing
   }
   if (query.isError) {
     return (
-      <ErrorState error={query.error} title={errorTitle} onRetry={() => void query.refetch()} />
+      <ErrorState
+        error={query.error}
+        title={errorTitle}
+        minHeight={errorMinHeight}
+        onRetry={() => void query.refetch()}
+      />
     );
   }
-  return <LoadingState label={loadingLabel} />;
+  return <>{loading ?? <LoadingState label={loadingLabel} />}</>;
 }

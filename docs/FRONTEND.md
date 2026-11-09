@@ -51,6 +51,18 @@ because the same title exists on several platforms.
   (`authApi`, `searchApi`, `catalogApi`, `cartApi`, `ordersApi`). In dev the Vite proxy plays the role of the Vercel rewrite.
 - `src/app/store.ts`: `makeStore()` (tests build their own) with the API and auth reducers and a listener that clears the cache when a session ends.
 
+## Homepage: a block renderer (`src/features/home`)
+The page contains no content. `HomePage` asks `GET /api/home/layout`; `HomeBlocks` renders each returned block through the registry in `blockRegistry.ts`
+(`hero` -> `BannerCarousel`, `carousel` -> `ProductRail`). Each block fetches its own data from the `endpoint` the layout gave it, so it has its own skeleton,
+its own error state with retry, and its own React error boundary (`BlockBoundary`): a block that fails, returns a malformed payload or throws while rendering
+shows a small error panel and the rest of the page is untouched.
+- Reorder or disable: change `home_blocks.position` / `enabled` in the database and reload; no frontend change. The layout is refetched on every visit (`refetchOnMountOrArgChange`).
+- A new block that reuses an existing `type` needs nothing in the frontend. An unknown `type` (checked with `Object.hasOwn`, so `constructor` is not a hit) is skipped silently.
+- Data coming from the database is treated as untrusted: `blocks.ts` accepts only endpoints of the form `/api/<segments>` (no other origin, no `..`), drops malformed
+  list items instead of failing the block, and removes unsafe `href`s from banners (the slide stays, without its link).
+- A hero with no banners or a rail with no products renders nothing (a block with nothing to show is not an error); if every block is disabled the page says so.
+- Hero autoplay comes from `config.autoplayMs` (ignored below 2000 ms), pauses on hover/focus and is off under `prefers-reduced-motion`.
+
 ## Shared loading / error / empty states
 `LoadingState`, `ErrorState` (readable message + optional retry), `EmptyState` (message + action) and `QueryBoundary`, which wraps any RTK Query result so a screen only writes its happy path
 (stale data keeps showing during a refetch; an error over existing data does not replace it).
@@ -58,15 +70,16 @@ because the same title exists on several platforms.
 ## Testing
 ```bash
 cd frontend
-npm test                      # Vitest + Testing Library: 69 tests (redirect safety, errors, auth slice, protected-route round trips, search box, header, state components)
+npm test                      # Vitest + Testing Library: 147 tests (redirect safety, errors, auth slice, protected-route round trips, search box, header, state components, homepage blocks)
 npm run lint && npm run typecheck && npm run build
 NODE_PATH=$(npm root -g) node e2e/shell.e2e.cjs      # 36 checks in a real browser against the real API (needs the stack running and Playwright installed)
+SQL_CMD="mysql -uroot keymart" NODE_PATH=$(npm root -g) node e2e/home.e2e.cjs   # 20 checks: edits home_blocks/banners in the database, watches the page change, restores the rows
 ```
 Component tests run the real routes, store and components against an in-memory fake of the API (`src/test/fakeApi.ts`); the browser script uses the real backend and database.
 Use `http://localhost:5173` (not 127.0.0.1): the backend's CSRF origin allow-list names `localhost`, and it correctly rejects other origins.
 
 ## Known limits
-- Home, store, search results, product page, cart editing and checkout are placeholders (cart and orders show real data through the shared states).
+- Store, search results, product page, cart editing and checkout are placeholders (cart and orders show real data through the shared states).
 - Bundle: the entry chunk is about 511 kB (161 kB gzip), mostly MUI + Redux Toolkit; pages are split off. Worth revisiting after the real screens exist.
 - The footer has only links to routes that exist; Eneba's help/legal pages are intentionally not faked.
 - `e2e/shell.e2e.cjs` is not run by `npm test` (it needs a running stack and a browser); Playwright is not a project dependency.

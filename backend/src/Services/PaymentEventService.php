@@ -46,7 +46,8 @@ final class PaymentEventService
         /** @var list<callable(): void> $afterCommit */
         $afterCommit = [];
 
-        $outcome = Transaction::run($this->pdo, function () use ($event, &$afterCommit): string {
+        $outcome = Transaction::runWithRetry($this->pdo, function () use ($event, &$afterCommit): string {
+            $afterCommit = []; // a retried attempt starts from nothing
             if (!$this->orders->recordEvent((string) $event['id'], (string) $event['type'])) {
                 return 'duplicate';
             }

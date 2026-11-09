@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Support\LockStrategy;
 use PDO;
 
 /**
@@ -14,21 +15,34 @@ use PDO;
  */
 final class KeyRepository
 {
-    public function __construct(private readonly PDO $pdo)
+    private ?bool $skipLocked = null;
+
+    /** @param string $lockStrategy auto | skip | wait (see LockStrategy) */
+    public function __construct(private readonly PDO $pdo, private readonly string $lockStrategy = LockStrategy::AUTO)
     {
     }
 
+    /** Resolved once, on first use (so building the repository never touches the database). */
+    private function skipLocked(): bool
+    {
+        return $this->skipLocked ??= LockStrategy::useSkipLocked($this->lockStrategy, (string) $this->pdo->getAttribute(PDO::ATTR_SERVER_VERSION));
+    }
+
     /**
-     * Locks up to $qty available keys of an offer for this transaction. SKIP LOCKED is the point: if another buyer's
-     * open transaction already holds some keys, we do not wait for them (no queue, no deadlock), we simply do not see
-     * them, so two buyers can never be handed the same key. Fewer rows than $qty means "not enough stock right now".
+     * Locks up to $qty available keys of an offer for this transaction.
+     *
+     * With SKIP LOCKED (MySQL 8.0.1+, MariaDB 10.6+) a row locked by another open transaction is skipped, not waited for: nobody
+     * queues, nobody deadlocks, and the same key can never be handed to two buyers. Without it (older MariaDB, e.g. XAMPP's 10.4)
+     * the SELECT waits for the other buyer's transaction to finish and then sees the committed state, so a key that was reserved
+     * in the meantime is simply not returned: the guarantee is the same, only the waiting differs. Keys are always locked in id order.
+     * Fewer rows than $qty means "not enough stock right now".
      *
      * @return list<int> key ids
      */
     public function lockAvailable(int $offerId, int $qty): array
     {
         $stmt = $this->pdo->prepare(
-            "SELECT id FROM game_keys WHERE offer_id = ? AND status = 'available' ORDER BY id LIMIT ? FOR UPDATE SKIP LOCKED",
+            "SELECT id FROM game_keys WHERE offer_id = ? AND status = 'available' ORDER BY id LIMIT ? FOR UPDATE" . ($this->skipLocked() ? ' SKIP LOCKED' : ''),
         );
         $stmt->bindValue(1, $offerId, PDO::PARAM_INT);
         $stmt->bindValue(2, $qty, PDO::PARAM_INT);

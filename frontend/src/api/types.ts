@@ -123,6 +123,21 @@ export interface HomeLayout {
   blocks: HomeBlockMeta[];
 }
 
+/** GET /api/home/banners */
+export interface BannerItem {
+  id: number;
+  imageUrl: string;
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  href: string;
+}
+
+/** GET /api/home/deals adds the crossed-out price to the usual card. */
+export interface HomeProduct extends ProductCard {
+  originalPriceCents?: number;
+}
+
 // ---- cart ------------------------------------------------------------------------------------
 
 export interface CartLine {

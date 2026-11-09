@@ -47,7 +47,7 @@ final class OrderLifecycle
     /** Own transaction. Returns the payment intent to cancel, or null when there was nothing to close. */
     public function close(int $orderId, string $status, ?string $reason): ?string
     {
-        return Transaction::run($this->pdo, function () use ($orderId, $status, $reason): ?string {
+        return Transaction::runWithRetry($this->pdo, function () use ($orderId, $status, $reason): ?string {
             $order = $this->orders->find($orderId, forUpdate: true);
             if ($order === null || !$this->closePending($order, $status, $reason)) {
                 return null;

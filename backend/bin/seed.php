@@ -8,6 +8,9 @@ use Database\Seeds\DatabaseSeeder;
 
 /** @var Psr\Container\ContainerInterface $container */
 $container = require __DIR__ . '/_boot.php';
+if (in_array('--create-db', $argv, true) && App\Support\DatabaseBootstrap::ensureExists($container->get('settings')['db'])) {
+    echo "Created the database.\n";
+}
 $pdo = $container->get(PDO::class);
 
 (new Migrator($pdo, dirname(__DIR__) . '/database/migrations'))->run(); // make sure the schema exists

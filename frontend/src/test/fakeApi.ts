@@ -5,7 +5,12 @@ export interface FakeResponse {
   body?: unknown;
 }
 
-export type FakeHandler = (request: { url: URL; method: string; body: unknown }) => FakeResponse;
+/** May return a promise (to simulate a slow answer) and may reject (to simulate the network failing). */
+export type FakeHandler = (request: {
+  url: URL;
+  method: string;
+  body: unknown;
+}) => FakeResponse | Promise<FakeResponse>;
 export type FakeRoutes = Record<string, FakeHandler | FakeResponse>;
 
 export interface FakeApi {
@@ -35,7 +40,7 @@ export function fakeApi(routes: FakeRoutes): FakeApi {
             body: { error: { code: 'not_found', message: 'No such mock', details: null } },
           }
         : typeof route === 'function'
-          ? route({ url, method: request.method, body: text ? JSON.parse(text) : null })
+          ? await route({ url, method: request.method, body: text ? JSON.parse(text) : null })
           : route;
       const status = reply.status ?? 200;
       return new Response(status === 204 ? null : JSON.stringify(reply.body ?? {}), {

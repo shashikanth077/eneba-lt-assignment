@@ -82,7 +82,7 @@ final class CheckoutService
     /** @return array{orderId: int, totalCents: int, reservedUntil: string} */
     private function reserve(int $userId): array
     {
-        return Transaction::run($this->pdo, function () use ($userId): array {
+        return Transaction::runWithRetry($this->pdo, function () use ($userId): array {
             $lines = $this->cart->lines($userId); // live prices, read inside the transaction
             if ($lines === []) {
                 throw new ApiException(422, 'cart_empty', 'Your cart is empty');

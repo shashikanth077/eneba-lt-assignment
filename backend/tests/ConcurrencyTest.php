@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use App\Support\LockStrategy;
 use PDO;
 
 /**
@@ -16,15 +17,23 @@ final class ConcurrencyTest extends ShopTestCase
 {
     // ---- deterministic interleaving ----------------------------------------------------------
 
+    private function requireSkipLocked(): void
+    {
+        if (!LockStrategy::useSkipLocked(getenv('LOCK_STRATEGY') ?: 'auto', (string) self::$pdo->getAttribute(PDO::ATTR_SERVER_VERSION))) {
+            self::markTestSkipped('Needs SKIP LOCKED (MySQL 8.0.1+/MariaDB 10.6+). With plain FOR UPDATE a buyer waits for an open transaction, which here never ends.');
+        }
+    }
+
     public function testABuyerDoesNotWaitForAnotherBuyersLockOnTheLastKeyHeSimplyDoesNotGetIt(): void
     {
+        $this->requireSkipLocked();
         $late = $this->user('late@example.com');
         $this->addToCart($late['token'], 3, 1);
 
         // Buyer A (a separate connection) is in the middle of its checkout transaction and holds a lock on the last key.
         $a = self::countingPdo();
         $a->beginTransaction();
-        $locked = (new \App\Repositories\KeyRepository($a))->lockAvailable(3, 1);
+        $locked = (new \App\Repositories\KeyRepository($a, LockStrategy::SKIP))->lockAvailable(3, 1);
         self::assertCount(1, $locked, 'A got the key');
 
         $started = microtime(true);
@@ -57,6 +66,7 @@ final class ConcurrencyTest extends ShopTestCase
 
     public function testASecondBuyerStillGetsTheKeysTheFirstOneDidNotTake(): void
     {
+        $this->requireSkipLocked();
         $a = $this->user('a@example.com');
         $b = $this->user('b@example.com');
         $this->addToCart($a['token'], 1, 2);
@@ -65,7 +75,7 @@ final class ConcurrencyTest extends ShopTestCase
         // A holds 2 of the 3 keys of offer 1 in an open transaction; B wants 1 and must get the remaining one.
         $conn = self::countingPdo();
         $conn->beginTransaction();
-        self::assertCount(2, (new \App\Repositories\KeyRepository($conn))->lockAvailable(1, 2));
+        self::assertCount(2, (new \App\Repositories\KeyRepository($conn, LockStrategy::SKIP))->lockAvailable(1, 2));
 
         $order = $this->checkout($b['token']);
         $conn->rollBack();

@@ -54,6 +54,7 @@ return static function (array $settings, array $overrides = []): ContainerInterf
             $auth['login_max_per_ip'],
             $auth['login_window_seconds'],
         ),
+        KeyRepository::class => static fn (ContainerInterface $c): KeyRepository => new KeyRepository($c->get(PDO::class), $settings['db']['lock_strategy']),
         CacheFactory::class => static fn (): CacheFactory => new CacheFactory($settings['cache']['driver'], $settings['cache']['dir']),
         HomeBlockRegistry::class => static fn (ContainerInterface $c): HomeBlockRegistry => new HomeBlockRegistry($c, require __DIR__ . '/home.php'),
         BannersBlock::class => static fn (ContainerInterface $c): BannersBlock => new BannersBlock($c->get(PDO::class), $blockCache($c, BannersBlock::SLUG)),

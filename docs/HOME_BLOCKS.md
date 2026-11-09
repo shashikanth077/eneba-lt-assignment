@@ -58,7 +58,7 @@ Measured locally: `/api/home/best-sellers` 6.5 ms cold, 3 ms cached (mostly PHP 
 3. Insert a `home_blocks` row (`slug`, `type`, `title`, `endpoint` = the block's `PATH`, `position`, `config`).
 That is all: the route is registered from the class constant, and the layout picks the row up. `HomeTest` fails if a row and a block ever disagree on the endpoint.
 
-## Frontend contract (to be built; no routing changes needed for new blocks)
+## Frontend contract (built in `frontend/src/features/home`, see docs/FRONTEND.md)
 The page asks `GET /api/home/layout` once, then renders each block with a renderer chosen by `type`:
 ```ts
 const renderers: Record<string, ComponentType<{ block: HomeBlockMeta }>> = { hero: HeroBlock, carousel: ProductCarousel };
@@ -66,3 +66,7 @@ const renderers: Record<string, ComponentType<{ block: HomeBlockMeta }>> = { her
 blocks.map((b) => { const R = renderers[b.type]; return R ? <R key={b.id} block={b} /> : null; });  // unknown type: skipped, never a crash
 ```
 A new block that reuses an existing `type` needs no frontend change at all; a new `type` needs one renderer registered in that map, and no new route.
+
+Implemented as `blockRegistry.ts` (`hero` -> `BannerCarousel`, `carousel` -> `ProductRail`), with a per-block error boundary and skeleton. Verified in a browser by editing
+`home_blocks` and `banners` through SQL (`frontend/e2e/home.e2e.cjs`): reorder, disable (the page drops the block and its endpoint answers 404), a failing block, and a banner edit.
+While developing, set `CACHE_DRIVER=none` so block *data* edits are visible at once; the layout itself is never cached.

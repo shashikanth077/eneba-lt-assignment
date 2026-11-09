@@ -33,7 +33,7 @@ export function AppShell() {
       </Box>
       <AppHeader />
       <CategoryNav />
-      <Box component="main" id="main" sx={{ flex: 1 }}>
+      <Box component="main" id="main" sx={{ flex: 1, minWidth: 0 }}>
         <PageContainer py={{ xs: 3, md: 5 }}>
           <Outlet />
         </PageContainer>

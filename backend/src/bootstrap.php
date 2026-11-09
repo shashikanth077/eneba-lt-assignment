@@ -22,6 +22,9 @@ return static function (array $overrides = []): App {
     $container = (require $root . '/config/container.php')($settings, $overrides);
 
     $app = Bridge::create($container);
+    if ($settings['base_path'] !== '') {
+        $app->setBasePath($settings['base_path']); // XAMPP: http://localhost/keymart/backend/public/api/...
+    }
     $responses = $app->getResponseFactory();
 
     // Middleware runs last-added-first: CORS wraps everything, so error responses get CORS headers too.
@@ -29,7 +32,7 @@ return static function (array $overrides = []): App {
     $app->addBodyParsingMiddleware();
     $allowedOrigins = array_values(array_filter([...$settings['cors']['origins'], $settings['app_url']]));
     // The Stripe webhook is not sent by a browser: it is authenticated by its signature instead of the CSRF header.
-    $app->add(new CsrfMiddleware($allowedOrigins, ['/api/webhooks/stripe']));
+    $app->add(new CsrfMiddleware($allowedOrigins, [$settings['base_path'] . '/api/webhooks/stripe']));
     $errors = $app->addErrorMiddleware($settings['debug'], false, false);
     $errors->setDefaultErrorHandler(
         static fn ($request, Throwable $e) => (new JsonErrorHandler($responses, $settings['debug']))($request, $e)
