@@ -87,6 +87,25 @@ shows a small error panel and the rest of the page is untouched.
   badge and line are not built: this shop has no cashback, so there is nothing true to show.
 - Header search still goes to the `/search` placeholder (built in a later task); the store has its own search box.
 
+## Search results (`/search?q=&page=`) and product page (`/product/:slug`)
+**Search.** The query and page live in the address. Results come from `GET /api/search` (every item has a 0..1 `score`, out-of-stock matches included and shown as "Out of stock").
+- *Did you mean:* on page 1, when the best score is below `WEAK_SCORE` (0.75; exact and partial names score 0.85-1.0, typos about 0.5-0.7, see docs/SEARCH.md), an info alert appears. `suggestQuery` (`lib/didYouMean.ts`)
+  repairs each query word using the words of the best match's title: a word that is a title word, or the start of one (still typing), is kept; any other word becomes the closest title word if within about one
+  edit per three letters. The alert links to `/search?q=<repaired>`; if nothing sensible can be suggested it says "We found no close match. These are the closest games." The weak matches stay listed. The API has no
+  suggestion field, so this is computed in the browser from data the API already returns (a server-side "did you mean" over all titles would be better; noted as a limit).
+- Empty state (no match, names the query, links to the store), no-query state (no request is made), page past the end, skeleton, error with retry.
+
+**Product page.** Cover (the catalog has one generated cover per game, so there is no gallery to build), name, platform/region/genre chips, publisher and release date, description, "From" price (cheapest *buyable* offer),
+then the offers table.
+- *Accessible table* (`OfferTable.tsx`): MUI table with a screen-reader caption ("Offers for X. 3 sellers. Use the column buttons to sort."), `th scope="col"` headers, the seller as `th scope="row"`, sortable columns as
+  buttons inside the header with `aria-sort`, rating as `role="img"` "Rated 4.4 out of 5", every action button named after its seller ("Add GameNest's offer to cart"). "Best price" is a text chip plus a left border, never colour alone.
+- *Sorting* (`offers.ts`, pure and unit-tested): seller, rating, stock, price; default price ascending; rating and stock start biggest-first; ties fall back to price then id. The offer's region is the product's (one region per product here), shown as a column so the table matches the brief.
+- *Best price:* the cheapest **buyable** offer, all of them on a tie, and only when at least two offers are buyable (one offer has nothing to be best against).
+- *Edge cases:* one offer (no highlight, a note that there is nothing to compare, still buyable); an offer with 0 stock (greyed, "Out of stock", disabled "Unavailable", never best, ignored by "From"; the API only lists buyable offers, so this is defensive);
+  a game with no buyable offers (message and link to the store, no table, "Out of stock" instead of a price); low stock ("Only 3 left", at 5 or fewer); unknown slug (not-found state); server error (retry).
+- *Add to cart:* signed in -> `POST /api/cart {offerId}` (server-side cart; the same offer again raises the quantity), the `Cart` tag is invalidated so the header badge refetches, the row shows "In your cart: n" from the server's cart, errors
+  (e.g. 409 insufficient stock) appear in the row. Signed out -> `/login?next=<this page>` and back; the item is **not** added automatically after signing in (the person clicks again).
+
 ## Shared loading / error / empty states
 `LoadingState`, `ErrorState` (readable message + optional retry), `EmptyState` (message + action) and `QueryBoundary`, which wraps any RTK Query result so a screen only writes its happy path
 (stale data keeps showing during a refetch; an error over existing data does not replace it).
@@ -94,17 +113,18 @@ shows a small error panel and the rest of the page is untouched.
 ## Testing
 ```bash
 cd frontend
-npm test                      # Vitest + Testing Library: 187 tests (redirect safety, errors, auth slice, protected-route round trips, search box, header, state components, homepage blocks, store query format and page behaviour)
+npm test                      # Vitest + Testing Library: 230 tests (redirect safety, errors, auth slice, protected-route round trips, search box, header, state components, homepage blocks, store, search and product pages, offer sorting, did-you-mean)
 npm run lint && npm run typecheck && npm run build
 NODE_PATH=$(npm root -g) node e2e/shell.e2e.cjs      # 36 checks in a real browser against the real API (needs the stack running and Playwright installed)
 SQL_CMD="mysql -uroot keymart" NODE_PATH=$(npm root -g) node e2e/home.e2e.cjs   # 20 checks: edits home_blocks/banners in the database, watches the page change, restores the rows
 BASE_URL=http://localhost:5173 NODE_PATH=$(npm root -g) node e2e/store.e2e.cjs     # 22 checks: reload/second tab parity, Back/Forward, debounced slider (one request), pages, drawer, overflow
+SQL_CMD="mysql -uroot keymart" NODE_PATH=$(npm root -g) node e2e/product.e2e.cjs   # 21 checks: typo -> did you mean, offers table, sorting, sign-up, two offers -> badge 2, single/no offers via SQL (restored)
 ```
 Component tests run the real routes, store and components against an in-memory fake of the API (`src/test/fakeApi.ts`); the browser script uses the real backend and database.
 Use `http://localhost:5173` (not 127.0.0.1): the backend's CSRF origin allow-list names `localhost`, and it correctly rejects other origins.
 
 ## Known limits
-- Search results, product page, cart editing and checkout are placeholders (cart and orders show real data through the shared states).
+- Cart editing and checkout are placeholders (cart and orders show real data through the shared states).
 - Bundle: the entry chunk is about 511 kB (161 kB gzip), mostly MUI + Redux Toolkit; pages are split off. Worth revisiting after the real screens exist.
 - The footer has only links to routes that exist; Eneba's help/legal pages are intentionally not faked.
 - `e2e/shell.e2e.cjs` is not run by `npm test` (it needs a running stack and a browser); Playwright is not a project dependency.

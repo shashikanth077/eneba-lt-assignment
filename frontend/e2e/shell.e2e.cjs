@@ -76,7 +76,7 @@ async function suggestionsFor(page, text) {
   for (const path of [
     '/',
     '/store',
-    '/product/anything',
+    '/product/tides-of-stormhaven-steam-global', // a real game (an unknown slug is a legitimate 404 now)
     '/login',
     '/register',
     '/does-not-exist',
