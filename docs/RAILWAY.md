@@ -40,7 +40,7 @@ Tests: `backend/tests/DatabaseSettingsTest.php`, `ConfigGuardTest.php`.
 and the seeder's reference/demo data (platforms, regions, sellers, 120 products, 408 offers, deals, statistics, banners, homepage blocks, two demo accounts).
 It uses InnoDB, utf8mb4, parents before children, and no `DROP`: importing into a database that already has the tables fails at the first statement and changes nothing.
 
-**Game keys are deliberately not in the file.** They are encrypted with *your* `KEY_ENCRYPTION_KEY`; a key baked into a public file would make every stored key readable by anyone.
+**Game keys are deliberately not in the file** (see docs/KEYS.md). They are encrypted with *your* `KEY_ENCRYPTION_KEY`; a key baked into a public file would make every stored key readable by anyone.
 Step 5 below creates them with your own key.
 
 **Regenerating it** (after a new migration): create a scratch database, run `DB_NAME=scratch php bin/setup.php`, then rebuild the file the way its header describes:

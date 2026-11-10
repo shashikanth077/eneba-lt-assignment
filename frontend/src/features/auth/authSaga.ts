@@ -16,6 +16,12 @@ import {
   registerFailure,
   registerRequest,
   registerSuccess,
+  changePasswordFailure,
+  changePasswordRequest,
+  changePasswordSuccess,
+  updateProfileFailure,
+  updateProfileRequest,
+  updateProfileSuccess,
   resendVerificationFailure,
   resendVerificationRequest,
   resendVerificationSuccess,
@@ -70,6 +76,28 @@ function* resendVerification(): Generator {
   yield put(result.status === 'sent' ? resendVerificationSuccess() : resendVerificationFailure());
 }
 
+function* updateProfile(action: ReturnType<typeof updateProfileRequest>): Generator {
+  try {
+    const { user } = (yield call(authService.updateProfile, action.payload)) as UserResponse;
+    yield put(updateProfileSuccess(user));
+  } catch (error) {
+    yield put(updateProfileFailure(toApiError(error)));
+  }
+}
+
+function* changePassword(action: ReturnType<typeof changePasswordRequest>): Generator {
+  try {
+    yield call(
+      authService.changePassword,
+      action.payload.currentPassword,
+      action.payload.newPassword,
+    );
+    yield put(changePasswordSuccess());
+  } catch (error) {
+    yield put(changePasswordFailure(toApiError(error)));
+  }
+}
+
 function* logout(): Generator {
   try {
     yield call(authService.logout);
@@ -85,5 +113,7 @@ export function* authSaga(): Generator {
   yield takeLatest(registerRequest.type, register as never);
   yield takeLatest(verifyEmailRequest.type, verifyEmail as never);
   yield takeLatest(resendVerificationRequest.type, resendVerification);
+  yield takeLatest(updateProfileRequest.type, updateProfile as never);
+  yield takeLatest(changePasswordRequest.type, changePassword as never);
   yield takeLatest(logoutRequest.type, logout);
 }

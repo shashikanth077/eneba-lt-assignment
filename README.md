@@ -52,7 +52,7 @@ Deploying (Vercel + Render + a free MySQL host): **docs/DEPLOY.md**.
 
 ## Demo accounts
 
-Created by `php bin/setup.php` / `php bin/seed.php` (already e-mail verified). Public on purpose: no money, no keys. Details in docs/EMAIL.md.
+Created by `php bin/setup.php` / `php bin/seed.php` (already e-mail verified, each with realistic paid orders; password change is blocked for them, docs/EMAIL.md). Public on purpose: no money, no keys. Details in docs/EMAIL.md.
 
 | Email | Password |
 |---|---|

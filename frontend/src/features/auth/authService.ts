@@ -19,3 +19,14 @@ export const verifyEmail = async (token: string): Promise<void> => {
 export const logout = async (): Promise<void> => {
   await apiClient.post(endpoints.logout);
 };
+
+export const updateProfile = async (displayName: string): Promise<UserResponse> =>
+  (await apiClient.patch<UserResponse>(endpoints.profile, { displayName })).data;
+
+/** The server verifies the current password, revokes every other session and answers with a fresh cookie for this one. */
+export const changePassword = async (
+  currentPassword: string,
+  newPassword: string,
+): Promise<UserResponse> =>
+  (await apiClient.post<UserResponse>(endpoints.changePassword, { currentPassword, newPassword }))
+    .data;

@@ -10,6 +10,8 @@ const initialState: AuthState = {
   signingOut: false,
   login: { loading: false, error: null },
   register: { loading: false, error: null },
+  profile: { loading: false, error: null, saved: false },
+  password: { loading: false, error: null, saved: false },
   verification: { status: 'idle', error: null },
   resend: { loading: false, sent: false, failed: false },
 };
@@ -75,6 +77,33 @@ const authSlice = createSlice({
     /** Any request answered 401 although we thought we were signed in: the cookie expired or was revoked. */
     sessionExpired: signedOutState,
 
+    updateProfileRequest: {
+      reducer: (state) => {
+        state.profile = { loading: true, error: null, saved: false };
+      },
+      prepare: (displayName: string) => ({ payload: displayName }),
+    },
+    updateProfileSuccess: (state, action: PayloadAction<User>) => {
+      state.user = action.payload;
+      state.profile = { loading: false, error: null, saved: true };
+    },
+    updateProfileFailure: (state, action: PayloadAction<SerializedApiError>) => {
+      state.profile = { loading: false, error: action.payload, saved: false };
+    },
+
+    changePasswordRequest: {
+      reducer: (state) => {
+        state.password = { loading: true, error: null, saved: false };
+      },
+      prepare: (values: { currentPassword: string; newPassword: string }) => ({ payload: values }),
+    },
+    changePasswordSuccess: (state) => {
+      state.password = { loading: false, error: null, saved: true };
+    },
+    changePasswordFailure: (state, action: PayloadAction<SerializedApiError>) => {
+      state.password = { loading: false, error: action.payload, saved: false };
+    },
+
     verifyEmailRequest: {
       reducer: (state) => {
         state.verification = { status: 'verifying', error: null };
@@ -120,6 +149,12 @@ export const {
   logoutRequest,
   signedOut,
   sessionExpired,
+  updateProfileRequest,
+  updateProfileSuccess,
+  updateProfileFailure,
+  changePasswordRequest,
+  changePasswordSuccess,
+  changePasswordFailure,
   verifyEmailRequest,
   verifyEmailSuccess,
   verifyEmailFailure,

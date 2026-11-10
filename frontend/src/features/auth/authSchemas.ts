@@ -39,3 +39,28 @@ export const registerSchema = z.object({
 
 export type LoginValues = z.infer<typeof loginSchema>;
 export type RegisterValues = z.infer<typeof registerSchema>;
+
+export const profileSchema = z.object({
+  displayName: z
+    .string()
+    .trim()
+    .min(2, 'Enter at least 2 characters')
+    .max(50, 'Use at most 50 characters'),
+});
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Enter your current password'),
+    newPassword: z
+      .string()
+      .min(PASSWORD_MIN, `Use at least ${PASSWORD_MIN} characters`)
+      .max(PASSWORD_MAX, `Use at most ${PASSWORD_MAX} characters`),
+    confirm: z.string(),
+  })
+  .refine((values) => values.newPassword === values.confirm, {
+    path: ['confirm'],
+    message: 'The two passwords are not the same',
+  });
+
+export type ProfileValues = z.infer<typeof profileSchema>;
+export type ChangePasswordValues = z.infer<typeof changePasswordSchema>;
