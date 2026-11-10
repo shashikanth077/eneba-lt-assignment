@@ -1,25 +1,18 @@
-import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../../app/hooks';
 import type { Offer } from '../../../../types/api.types';
-import { loginUrl } from '../../../../utils/redirect';
-import { selectIsAuthenticated } from '../../../auth/authSlice';
 import { addToCartRequest, selectLineState, selectQtyInCart } from '../../../cart/cartSlice';
 
-/** What every "add this offer to the cart" button needs: the state of that offer's line, and an action that sends a signed-out visitor to sign in first. */
-export function useAddOffer(offer: Offer) {
+/**
+ * What every "add this offer to the cart" button needs: the state of that offer's line, and the action. Signed in or not, the same
+ * action is dispatched: a visitor's items go to the cart kept in their browser and are merged into their account when they sign in.
+ */
+export function useAddOffer(offer: Offer, productSlug: string) {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const signedIn = useAppSelector(selectIsAuthenticated);
   const line = useAppSelector(selectLineState(offer.id));
   const inCart = useAppSelector(selectQtyInCart(offer.id));
 
   const add = () => {
-    if (!signedIn) {
-      navigate(loginUrl(location.pathname + location.search));
-      return;
-    }
-    dispatch(addToCartRequest({ offerId: offer.id }));
+    dispatch(addToCartRequest({ offerId: offer.id, productSlug }));
   };
 
   return { add, pending: line?.pending ?? false, error: line?.error ?? null, inCart };

@@ -1,15 +1,12 @@
 import { ShoppingCart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAppSelector } from '../../../app/hooks';
-import { selectIsAuthenticated } from '../../../features/auth/authSlice';
 import { selectCartCount } from '../../../features/cart/cartSlice';
 import styles from './Header.module.scss';
 
-/** Cart icon with the number of items in the (server-side) cart. Signed-out visitors have no cart: no badge. */
+/** Cart icon with the number of items: the account's cart when signed in, the browser's own cart for a visitor. */
 export function CartButton() {
-  const signedIn = useAppSelector(selectIsAuthenticated);
-  const count = useAppSelector(selectCartCount);
-  const shown = signedIn ? count : 0;
+  const shown = useAppSelector(selectCartCount);
 
   return (
     <Link

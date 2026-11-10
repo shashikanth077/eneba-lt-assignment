@@ -9,6 +9,9 @@ import { ProductRail } from './ProductRail';
 const rail = (title = 'Hot deals', endpoint = '/api/home/deals') =>
   block('deals', 'carousel', title, endpoint);
 
+/** A card has two links to the game: the hover button "View offers" and the card body. These tests are about the body. */
+const notViewOffers = (name: string) => name !== 'View offers';
+
 describe('ProductRail', () => {
   it('shows the block title and a linked card per game with its platform, region and price', async () => {
     homeBackend([], {
@@ -29,11 +32,11 @@ describe('ProductRail', () => {
     expect(await screen.findByRole('heading', { name: 'Hot deals' })).toBeInTheDocument();
     const first = screen.getByRole('link', { name: /Alpha Quest/ });
     expect(first).toHaveAttribute('href', '/product/alpha-quest-steam-global');
-    expect(first).toHaveTextContent('Steam');
+    expect(first.closest('article')).toHaveTextContent('Steam'); // the platform strip sits on the cover, outside the body link
     expect(first).toHaveTextContent('Global');
     expect(first).toHaveTextContent(formatCurrency(1999));
     const second = screen.getByRole('link', { name: /Bravo Run/ });
-    expect(second).toHaveTextContent('Xbox');
+    expect(second.closest('article')).toHaveTextContent('Xbox');
     expect(second).toHaveTextContent('Europe');
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
   });
@@ -87,7 +90,7 @@ describe('ProductCard', () => {
   it('shows an out-of-stock marker instead of a price', () => {
     wrap({ ...base, inStock: false, fromPriceCents: null });
 
-    const link = screen.getByRole('link');
+    const link = screen.getByRole('link', { name: notViewOffers });
     expect(within(link).getByText('Out of stock')).toBeInTheDocument();
     expect(link).not.toHaveTextContent('€');
   });
@@ -95,13 +98,15 @@ describe('ProductCard', () => {
   it('shows just the price when there is no deal', () => {
     wrap(base);
 
-    expect(screen.getByRole('link')).toHaveTextContent(formatCurrency(base.fromPriceCents ?? 0));
-    expect(screen.getByRole('link')).not.toHaveTextContent('%');
+    expect(screen.getByRole('link', { name: notViewOffers })).toHaveTextContent(
+      formatCurrency(base.fromPriceCents ?? 0),
+    );
+    expect(screen.getByRole('link', { name: notViewOffers })).not.toHaveTextContent('%');
   });
 
   it('shows a discount even when the crossed-out price is unknown (catalog cards)', () => {
     wrap({ ...base, discountPct: 17 });
 
-    expect(screen.getByRole('link')).toHaveTextContent('-17%');
+    expect(screen.getByRole('link', { name: notViewOffers })).toHaveTextContent('-17%');
   });
 });

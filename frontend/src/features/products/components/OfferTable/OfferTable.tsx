@@ -17,6 +17,7 @@ import { AddToCartButton } from './AddToCartButton';
 import styles from './OfferTable.module.scss';
 
 interface OfferTableProps {
+  productSlug: string;
   productName: string;
   regionName: string;
   offers: Offer[];
@@ -66,7 +67,7 @@ function SortableHeader({
  * Every seller's offer for one game. Accessible table: a caption, column headers (`th scope="col"`), the seller as the row header,
  * and sortable columns whose header carries `aria-sort`. "Best price" is a text chip plus a border, never colour alone.
  */
-export function OfferTable({ productName, regionName, offers }: OfferTableProps) {
+export function OfferTable({ productSlug, productName, regionName, offers }: OfferTableProps) {
   const [sort, setSort] = useState<OfferSort>(DEFAULT_OFFER_SORT);
   const rows = sortOffers(offers, sort);
   const best = bestPriceOfferIds(offers);
@@ -130,7 +131,7 @@ export function OfferTable({ productName, regionName, offers }: OfferTableProps)
                     />
                   </td>
                   <td>
-                    <AddToCartButton offer={offer} />
+                    <AddToCartButton offer={offer} productSlug={productSlug} />
                   </td>
                 </tr>
               );

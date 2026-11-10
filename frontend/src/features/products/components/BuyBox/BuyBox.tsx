@@ -6,7 +6,15 @@ import { useAddOffer } from '../OfferTable/useAddOffer';
 import styles from './BuyBox.module.scss';
 
 /** The panel beside the details (as in the reference): the lowest price, how many sellers there are, and one button for the cheapest offer. */
-export function BuyBox({ cheapest, offerCount }: { cheapest: Offer | null; offerCount: number }) {
+export function BuyBox({
+  cheapest,
+  offerCount,
+  productSlug,
+}: {
+  cheapest: Offer | null;
+  offerCount: number;
+  productSlug: string;
+}) {
   if (cheapest === null) {
     return (
       <aside className={styles.box} aria-label="Buy">
@@ -14,11 +22,19 @@ export function BuyBox({ cheapest, offerCount }: { cheapest: Offer | null; offer
       </aside>
     );
   }
-  return <BuyCheapest cheapest={cheapest} offerCount={offerCount} />;
+  return <BuyCheapest cheapest={cheapest} offerCount={offerCount} productSlug={productSlug} />;
 }
 
-function BuyCheapest({ cheapest, offerCount }: { cheapest: Offer; offerCount: number }) {
-  const { add, pending, error, inCart } = useAddOffer(cheapest);
+function BuyCheapest({
+  cheapest,
+  offerCount,
+  productSlug,
+}: {
+  cheapest: Offer;
+  offerCount: number;
+  productSlug: string;
+}) {
+  const { add, pending, error, inCart } = useAddOffer(cheapest, productSlug);
   return (
     <aside className={styles.box} aria-label="Buy">
       <PriceDisplay

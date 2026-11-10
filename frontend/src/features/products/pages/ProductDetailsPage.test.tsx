@@ -312,16 +312,17 @@ describe('add to cart', () => {
     expect(main().getByRole('button', { name: 'Add to cart, offer from GameNest' })).toBeEnabled(); // can try again
   });
 
-  it('a signed-out visitor is sent to sign in and brought back to this game', async () => {
+  it('a visitor who has not signed in can add to the cart: it stays on the game page and the badge counts it', async () => {
     const api = shopBackend({ product: productResponse(THREE), signedIn: false });
     const { router } = await openProduct();
     await userEvent.click(
       await main().findByRole('button', { name: 'Add to cart, offer from GameNest' }),
     );
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/login'));
-    expect(router.state.location.search).toBe(`?next=${encodeURIComponent(`/product/${SLUG}`)}`);
+    await within(screen.getByRole('banner')).findByRole('link', { name: 'Cart, 1 items' });
+    expect(router.state.location.pathname).toBe(`/product/${SLUG}`);
     expect(api.callsTo('/api/cart').filter((call) => call.startsWith('POST'))).toHaveLength(0);
+    expect((await main().findAllByText('In your cart: 1')).length).toBeGreaterThan(0);
   });
 });
 

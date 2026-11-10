@@ -5,9 +5,9 @@ import { isBuyable } from '../../offers';
 import { useAddOffer } from './useAddOffer';
 import styles from './OfferTable.module.scss';
 
-/** The add-to-cart button of one offer row. Signed-out visitors are sent to sign in and come back to this page. */
-export function AddToCartButton({ offer }: { offer: Offer }) {
-  const { add, pending, error, inCart } = useAddOffer(offer);
+/** The add-to-cart button of one offer row. Works without signing in (the cart is kept in the browser until checkout). */
+export function AddToCartButton({ offer, productSlug }: { offer: Offer; productSlug: string }) {
+  const { add, pending, error, inCart } = useAddOffer(offer, productSlug);
   const seller = offer.seller.name;
 
   if (!isBuyable(offer)) {
