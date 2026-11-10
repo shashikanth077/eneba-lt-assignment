@@ -20,6 +20,9 @@ signed-in buyer
 The buyer never sends a price or an amount: `POST /api/checkout` has no body, the total is `SUM(live price x qty)` computed inside the
 transaction, and that same number goes to Stripe and is the only amount a webhook is accepted for.
 
+## Confirming a payment without waiting for the webhook (P33)
+The webhook stays the normal path, but a webhook can be late, sent to the wrong address or signed with another endpoint's secret, which used to leave a buyer who had paid on "Confirming your payment" forever (and the confirmation e-mail, which is sent when the order becomes paid, never went out). Now `GET /api/orders/{id}` on a **pending** order with a payment intent makes the server call Stripe (`paymentIntents->retrieve`, secret key, server to server). If Stripe says `succeeded`, the order is fulfilled by the same routine as the webhook (`PaymentEventService`, synthetic event id `sync_<intent>`): amount and currency are checked, an already paid order is a no-op, so the webhook arriving later changes nothing. The browser's word is never used; a Stripe outage is logged and the next poll retries. Tests: `backend/tests/PaymentConfirmationTest.php`.
+
 ## Endpoints (all but the webhook need the session cookie; mutating ones also need `X-Requested-With: fetch`)
 | Method | Path | Notes |
 |---|---|---|

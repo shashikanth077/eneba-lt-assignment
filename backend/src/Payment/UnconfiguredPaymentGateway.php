@@ -14,6 +14,11 @@ final class UnconfiguredPaymentGateway implements PaymentGateway
         throw new ApiException(503, 'payments_unavailable', 'Payments are not configured on this server');
     }
 
+    public function retrieveIntent(string $paymentIntentId): array
+    {
+        throw new PaymentGatewayException('Stripe is not configured');
+    }
+
     public function cancelIntent(string $paymentIntentId): void
     {
         throw new PaymentGatewayException('Stripe is not configured');

@@ -16,6 +16,9 @@ final class FakePaymentGateway implements PaymentGateway
     public array $canceled = [];
     /** @var list<string> */
     public array $refunded = [];
+    /** @var array<string, string> payment intent id => status the fake provider reports (default requires_payment_method) */
+    public array $statuses = [];
+    public bool $failRetrieve = false;
     public bool $failCreate = false;
     public bool $failCancel = false;
     public bool $failRefund = false;
@@ -29,6 +32,28 @@ final class FakePaymentGateway implements PaymentGateway
         $this->created[] = ['amount' => $amountCents, 'currency' => $currency, 'orderId' => $orderId, 'idempotencyKey' => $idempotencyKey, 'id' => $id];
 
         return ['id' => $id, 'clientSecret' => $id . '_secret_x'];
+    }
+
+    public function retrieveIntent(string $paymentIntentId): array
+    {
+        if ($this->failRetrieve) {
+            throw new PaymentGatewayException('fake: provider down');
+        }
+        $order = null;
+        foreach ($this->created as $created) {
+            if ($created['id'] === $paymentIntentId) {
+                $order = $created;
+            }
+        }
+        $status = $this->statuses[$paymentIntentId] ?? 'requires_payment_method';
+
+        return [
+            'id' => $paymentIntentId,
+            'status' => $status,
+            'amount' => $order['amount'] ?? 0,
+            'amount_received' => $status === 'succeeded' ? ($order['amount'] ?? 0) : 0,
+            'currency' => $order['currency'] ?? 'eur',
+        ];
     }
 
     public function cancelIntent(string $paymentIntentId): void

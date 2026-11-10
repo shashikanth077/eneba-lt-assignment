@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Exceptions\ApiException;
 use App\Orders\OrderStatus;
+use App\Payment\PaymentGateway;
 use App\Repositories\KeyRepository;
 use App\Repositories\OrderRepository;
 use App\Support\KeyCipher;
@@ -19,6 +20,8 @@ final class OrderService
         private readonly KeyRepository $keys,
         private readonly KeyCipher $cipher,
         private readonly OrderLifecycle $lifecycle,
+        private readonly PaymentGateway $gateway,
+        private readonly PaymentEventService $payments,
     ) {
     }
 
@@ -54,6 +57,11 @@ final class OrderService
             throw ApiException::notFound('Order not found');
         }
 
+        if ($order['status'] === OrderStatus::PENDING && ($order['stripe_payment_intent_id'] ?? null) !== null) {
+            $this->confirmWithProvider((string) $order['stripe_payment_intent_id']);
+            $order = $this->orders->find($orderId) ?? $order;
+        }
+
         $keysByOffer = $order['status'] === OrderStatus::PAID ? $this->keys->soldKeysOfOrder($orderId) : [];
         $items = array_map(function (array $item) use ($keysByOffer): array {
             $line = [
@@ -85,5 +93,29 @@ final class OrderService
         }
 
         return ['order' => $view + ['items' => $items]];
+    }
+
+    /**
+     * The buyer is looking at a PENDING order (the payment page polls this). Fulfilment normally comes from Stripe's webhook, but a
+     * webhook can be late, mis-addressed or unconfigured, which would leave a paid customer staring at "Confirming your payment". So the
+     * server asks Stripe itself (secret key, server to server) and, if the payment really succeeded, applies it through the SAME
+     * routine as the webhook (amount and currency are checked, an already paid order is a no-op, so both paths together are safe).
+     * Nothing the browser says is trusted. Failure to reach Stripe is not an error here: the next poll tries again.
+     */
+    private function confirmWithProvider(string $paymentIntentId): void
+    {
+        try {
+            $intent = $this->gateway->retrieveIntent($paymentIntentId);
+            if ($intent['status'] !== 'succeeded') {
+                return;
+            }
+            $this->payments->handle([
+                'id' => 'sync_' . $paymentIntentId,
+                'type' => 'payment_intent.succeeded',
+                'data' => ['object' => $intent],
+            ]);
+        } catch (\Throwable $e) {
+            error_log('[orders] could not confirm payment ' . $paymentIntentId . ' with the provider: ' . $e->getMessage());
+        }
     }
 }

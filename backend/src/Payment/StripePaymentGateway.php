@@ -41,6 +41,23 @@ final class StripePaymentGateway implements PaymentGateway
         return ['id' => $intent->id, 'clientSecret' => $secret];
     }
 
+    public function retrieveIntent(string $paymentIntentId): array
+    {
+        try {
+            $intent = $this->stripe->paymentIntents->retrieve($paymentIntentId);
+        } catch (ApiErrorException $e) {
+            throw new PaymentGatewayException('Stripe could not look up the payment: ' . $e->getMessage(), 0, $e);
+        }
+
+        return [
+            'id' => (string) $intent->id,
+            'status' => (string) $intent->status,
+            'amount' => (int) $intent->amount,
+            'amount_received' => (int) ($intent->amount_received ?? 0),
+            'currency' => (string) $intent->currency,
+        ];
+    }
+
     public function cancelIntent(string $paymentIntentId): void
     {
         try {
