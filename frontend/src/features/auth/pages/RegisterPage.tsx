@@ -15,7 +15,7 @@ export function RegisterPage() {
   if (status === 'unknown') return <Loader label="Checking your session…" />;
 
   return (
-    <AuthCard title="Create your account">
+    <AuthCard title="Create your account" headline="Hi! It’s nice to see you!">
       <RegisterForm next={next} />
     </AuthCard>
   );

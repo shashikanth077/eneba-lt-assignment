@@ -16,7 +16,7 @@ export function LoginPage() {
   if (status === 'unknown') return <Loader label="Checking your session…" />;
 
   return (
-    <AuthCard title="Sign in">
+    <AuthCard title="Sign in" headline="Welcome back!">
       <LoginForm next={next} />
     </AuthCard>
   );

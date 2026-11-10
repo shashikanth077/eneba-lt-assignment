@@ -66,21 +66,18 @@ export function ProductListingPage() {
         <div className={styles.search}>
           <ProductSearch value={query.q} onSearch={(q) => update({ q }, { replace: true })} />
         </div>
-        <div className={styles.controls}>
-          {!docked && (
-            <Button
-              variant="outline"
-              startIcon={<SlidersHorizontal size={18} aria-hidden />}
-              onClick={() => setDrawerOpen(true)}
-            >
-              Filters
-              {activeFilterCount(query) > 0 && (
-                <span className={styles.badge}>{activeFilterCount(query)}</span>
-              )}
-            </Button>
-          )}
-          <ProductSort value={query.sort} q={query.q} onChange={(sort) => update({ sort })} />
-        </div>
+        {!docked && (
+          <Button
+            variant="outline"
+            startIcon={<SlidersHorizontal size={18} aria-hidden />}
+            onClick={() => setDrawerOpen(true)}
+          >
+            Filters
+            {activeFilterCount(query) > 0 && (
+              <span className={styles.badge}>{activeFilterCount(query)}</span>
+            )}
+          </Button>
+        )}
       </div>
 
       <ActiveFilters query={query} labels={facets} onChange={update} />
@@ -89,9 +86,12 @@ export function ProductListingPage() {
         {docked && <Sidebar label="Filters">{filters}</Sidebar>}
 
         <section className={styles.results} aria-label="Results">
-          <p className={styles.count} aria-live="polite">
-            {data ? `${data.total} ${data.total === 1 ? 'game' : 'games'}` : ''}
-          </p>
+          <div className={styles.resultsHead}>
+            <p className={styles.count} aria-live="polite">
+              {data ? `${data.total} ${data.total === 1 ? 'game' : 'games'}` : ''}
+            </p>
+            <ProductSort value={query.sort} q={query.q} onChange={(sort) => update({ sort })} />
+          </div>
 
           {failed ? (
             <ErrorMessage

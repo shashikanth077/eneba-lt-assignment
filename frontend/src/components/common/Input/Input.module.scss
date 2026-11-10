@@ -14,7 +14,10 @@
 .input {
   min-height: 48px;
   padding: 10px 14px;
-  background: var(--color-filter-input);
+  background: var(
+    --input-bg,
+    var(--color-filter-input)
+  ); // a panel can set --input-bg to put its fields on a darker fill
   border: 1px solid transparent;
   border-radius: var(--radius);
   font-weight: 600;

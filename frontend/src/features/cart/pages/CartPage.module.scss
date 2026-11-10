@@ -3,6 +3,21 @@
 .page {
   display: grid;
   gap: 24px;
+  width: 100%;
+  max-width: var(--checkout-max);
+  margin: 0 auto;
+}
+
+.panel {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+}
+
+.panelTitle {
+  font-size: 1.125rem;
 }
 
 .layout {
@@ -11,7 +26,7 @@
   align-items: start;
 
   @include up(md) {
-    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-columns: minmax(0, 1fr) 320px;
   }
 }
 

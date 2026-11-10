@@ -129,17 +129,21 @@ const sql = (statement) => execSync(`${SQL} -N -e "${statement}"`, { encoding: '
     await page.getByRole('banner').getByRole('link', { name: 'Cart, 2 items' }).waitFor();
     check(true, `adding offers from ${a} and ${b} updates the cart badge to 2`);
     check(
-      (await page.getByText('In your cart: 1').count()) === 2,
-      'both rows say "In your cart: 1"',
+      (await page.getByRole('table').getByText('In your cart: 1').count()) === 2,
+      'both rows of the offers table say "In your cart: 1"',
     );
     await page.goto(BASE + '/cart');
     await page.waitForLoadState('networkidle');
     const cartText = await page.locator('main').innerText();
-    check(/2 items/.test(cartText), 'the cart page (still a placeholder) counts 2 items');
+    check(/2 items/.test(cartText), 'the cart page counts 2 items');
     check(
-      (await cartLink.getAttribute('aria-label')) === 'Cart, 2 items',
-      'badge survives navigation',
+      await page.getByRole('list', { name: 'Checkout progress' }).isVisible(),
+      'the cart page uses the reduced checkout header with its progress line',
     );
+    await page.goto(BASE + `/product/${slug}`);
+    await page.getByRole('table').waitFor();
+    await cartLink.and(page.getByLabel('Cart, 2 items')).waitFor();
+    check(true, 'badge survives navigation');
 
     // 5. Single offer, then no offers (deactivate in the database, restore afterwards).
     sql(`UPDATE offers SET active=0 WHERE product_id=${productId} AND id<>${original[0]}`);

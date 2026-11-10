@@ -324,3 +324,39 @@ describe('add to cart', () => {
     expect(api.callsTo('/api/cart').filter((call) => call.startsWith('POST'))).toHaveLength(0);
   });
 });
+
+describe('buy box and breadcrumbs (reference layout)', () => {
+  it('shows breadcrumbs down to the game, and a buy box with the lowest price and the number of offers', async () => {
+    shopBackend({ product: productResponse(THREE) });
+    await openProduct();
+
+    const crumbs = await screen.findByRole('navigation', { name: 'Breadcrumb' });
+    expect(within(crumbs).getByRole('link', { name: 'Steam' })).toHaveAttribute(
+      'href',
+      '/store?platform=steam',
+    );
+    const box = within(await screen.findByRole('complementary', { name: 'Buy' }));
+    expect(box.getByText(formatCurrency(5509))).toBeInTheDocument();
+    expect(box.getByText(`3 offers from ${formatCurrency(5509)}`)).toBeInTheDocument();
+  });
+
+  it('its button adds the CHEAPEST offer to the cart', async () => {
+    const api = shopBackend({ product: productResponse(THREE) });
+    await openProduct();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Add to cart, cheapest offer' }),
+    );
+
+    await waitFor(() =>
+      expect(api.cart.lines.map((line) => line.sellerName)).toEqual(['GameNest']),
+    );
+  });
+
+  it('with nothing in stock it says so and has no button', async () => {
+    shopBackend({ product: productResponse([]) });
+    await openProduct();
+    const box = within(await screen.findByRole('complementary', { name: 'Buy' }));
+    expect(box.getByText('Out of stock')).toBeInTheDocument();
+    expect(box.queryByRole('button')).not.toBeInTheDocument();
+  });
+});

@@ -51,3 +51,15 @@
     -webkit-box-orient: vertical;
   }
 }
+
+// Escapes the centred container and spans the whole viewport (the hero banner). The page itself clips horizontal overflow
+// (global.scss) so a scrollbar's width cannot make the page scroll sideways.
+@mixin full-bleed {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+}
+
+// Left padding that lines content up with the container's left edge even though the element is full-bleed.
+@function container-inset($extra: 24px) {
+  @return max(#{$extra}, calc((100vw - #{$layout-container-max}) / 2 + #{$extra}));
+}

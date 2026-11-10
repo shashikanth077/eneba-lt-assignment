@@ -16,7 +16,7 @@ export function Header() {
       <PageContainer>
         <div className={styles.grid}>
           <Link to="/" className={styles.logo} aria-label="KEYMART home">
-            <Logo size={32} />
+            <Logo size={40} />
           </Link>
           <div className={styles.search}>
             <SearchBox />

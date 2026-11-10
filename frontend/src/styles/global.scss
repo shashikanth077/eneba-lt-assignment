@@ -22,8 +22,31 @@
   --color-text-muted: #{$color-text-muted};
   --color-placeholder: #{$color-placeholder};
   --color-border: #{$color-border};
+  --color-auth-page: #{$color-auth-page};
+  --color-region-pink: #{$color-region-pink};
+  --color-step-active: #{$color-step-active};
+  --color-step-inactive: #{$color-step-inactive};
+  --header-height: #{$layout-header-height};
+  --nav-height: #{$layout-nav-height};
+  --search-width: #{$layout-search-width};
+  --search-height: #{$layout-search-height};
+  --checkout-max: #{$layout-checkout-max};
+  --font-size-nav: #{$font-size-nav};
+  --font-size-search: #{$font-size-search};
+  --font-size-card-title: #{$font-size-card-title};
+  --font-size-card-meta: #{$font-size-card-meta};
+  --font-size-card-price: #{$font-size-card-price};
+  --font-size-section-title: #{$font-size-section-title};
+  --font-size-total: #{$font-size-total};
   --radius: 2px;
+  --page-pad-y: 24px; // vertical padding of the page body; full-bleed sections cancel it so they touch the bars above and below
   --space: 8px;
+}
+
+@media (min-width: #{$bp-md}) {
+  :root {
+    --page-pad-y: 40px;
+  }
 }
 
 *,
@@ -38,6 +61,7 @@ html {
 
 body {
   margin: 0;
+  overflow-x: clip; // full-bleed sections use 100vw, which includes the scrollbar's width
   background: var(--color-page);
   color: var(--color-text);
   font-family: $font-stack;
@@ -70,7 +94,7 @@ h1 {
 }
 
 h2 {
-  font-size: 1.5rem;
+  font-size: var(--font-size-section-title);
   font-weight: 700;
   line-height: 1.25;
 }

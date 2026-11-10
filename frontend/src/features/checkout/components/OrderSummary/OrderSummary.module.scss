@@ -17,8 +17,24 @@
 
 .line {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.thumb {
+  width: 48px;
+  aspect-ratio: 267 / 337;
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+  flex: none;
+}
+
+.info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 
 .name {
@@ -38,7 +54,7 @@
   font-weight: 700;
 
   strong {
-    font-size: 1.25rem;
+    font-size: var(--font-size-total);
     font-weight: 800;
   }
 }

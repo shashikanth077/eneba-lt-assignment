@@ -15,37 +15,13 @@
 
 .toolbar {
   display: flex;
-  flex-direction: column;
+  align-items: stretch;
   gap: 16px;
-
-  @include up(md) {
-    flex-direction: row;
-    align-items: flex-end;
-  }
 }
 
 .search {
   flex: 1;
   min-width: 0;
-}
-
-.controls {
-  display: flex;
-  align-items: flex-end;
-  gap: 16px;
-
-  // the sort field takes the room left next to the Filters button, so a phone never overflows
-  > :last-child {
-    flex: 1;
-    min-width: 0;
-  }
-
-  @include up(md) {
-    > :last-child {
-      flex: none;
-      width: 220px;
-    }
-  }
 }
 
 .layout {
@@ -66,10 +42,23 @@
   min-width: 0;
 }
 
+.resultsHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  > :last-child {
+    flex: none;
+    width: 220px;
+  }
+}
+
 .count {
   min-height: 24px;
-  margin-bottom: 16px;
-  color: var(--color-text-secondary);
+  font-size: 1.0625rem;
+  color: var(--color-text);
 }
 
 .pagination {

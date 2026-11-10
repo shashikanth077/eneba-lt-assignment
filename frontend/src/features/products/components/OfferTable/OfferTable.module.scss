@@ -1,6 +1,7 @@
 @use '../../../../styles/mixins' as *;
 
 .scroll {
+  position: relative; // the visually-hidden header text is absolutely positioned: without this it escapes the scroller and widens the page
   overflow-x: auto;
 }
 

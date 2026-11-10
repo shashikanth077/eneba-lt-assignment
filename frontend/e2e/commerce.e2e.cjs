@@ -120,7 +120,7 @@ const webhook = async (eventId, intentId, amount) => {
     .getByRole('button', { name: /Increase quantity of/ })
     .first()
     .click();
-  await header().getByRole('link', { name: 'Cart, 3 items' }).waitFor();
+  await page.getByRole('region', { name: 'Order summary' }).getByText('3 items').waitFor(); // the cart page has the reduced header: read the count from the summary
   cart = await serverCart();
   check(
     cart.lines.reduce((n, l) => n + l.qty, 0) === 3 &&
@@ -131,13 +131,13 @@ const webhook = async (eventId, intentId, amount) => {
     .getByRole('button', { name: /Decrease quantity of/ })
     .first()
     .click();
-  await header().getByRole('link', { name: 'Cart, 2 items' }).waitFor();
+  await page.getByRole('region', { name: 'Order summary' }).getByText('2 items').waitFor(); // the cart page has the reduced header: read the count from the summary
   check(true, 'decreasing it again works');
   await page
     .getByRole('button', { name: /Remove .* from the cart/ })
     .last()
     .click();
-  await header().getByRole('link', { name: 'Cart, 1 items' }).waitFor();
+  await page.getByRole('region', { name: 'Order summary' }).getByText('1 item').waitFor(); // the cart page has the reduced header: read the count from the summary
   check(
     (await page.getByRole('list', { name: 'Cart items' }).locator('li').count()) === 1,
     'removing a line drops it',

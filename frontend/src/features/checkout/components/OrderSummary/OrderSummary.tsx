@@ -13,11 +13,19 @@ export function OrderSummary({ cart }: { cart: Cart }) {
       <ul className={styles.lines}>
         {cart.lines.map((line) => (
           <li key={line.offerId} className={styles.line}>
-            <div>
-              <p className={styles.name}>
-                {line.qty} × {line.productName}
-              </p>
-              <p className={styles.seller}>Sold by {line.sellerName}</p>
+            <div className={styles.info}>
+              <img
+                src={`/api/images/products/${line.productSlug}.svg`}
+                alt=""
+                loading="lazy"
+                className={styles.thumb}
+              />
+              <div>
+                <p className={styles.name}>
+                  {line.qty} × {line.productName}
+                </p>
+                <p className={styles.seller}>Sold by {line.sellerName}</p>
+              </div>
             </div>
             <strong>{formatCurrency(line.lineCents)}</strong>
           </li>

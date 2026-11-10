@@ -103,6 +103,9 @@ Config (`frontend/.env`): `VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_EMAILJS_*`, optio
 SCSS modules per component (`X.module.scss`), design tokens as SCSS variables and CSS custom properties (`styles/`), breakpoints via `@include up(md)`, a shared focus ring, `prefers-reduced-motion` respected. The only place JS needs colours is Stripe's
 iframe (`utils/constants.ts`). Placeholder text uses `#c4aaf0` (4.5:1) instead of the measured `#ad8fe4` (3.9:1).
 
+### Visual parity pass (P17)
+Sizes come from tokens in `styles/variables.scss` (mirrored as CSS custom properties in `global.scss`): header 128, nav 64, search 660 x 76, checkout column 960, a type scale (`$font-size-nav/search/card-title/card-meta/card-price/section-title/total`) and `--color-auth-page`, `--color-region-pink`, `--color-step-*`, `--input-bg`. Mixins: `full-bleed` (hero spans the viewport; `body` uses `overflow-x: clip`) and `container-inset()` (content still lines up with the container). New components: `CheckoutHeader` (wordmark + 3-step progress, used with a compact footer on `/cart`, `/checkout`, `/payment*`), `Breadcrumbs`, `BuyBox` (cheapest offer + add to cart, shares `useAddOffer` with the offer table). Grids that hold tables use `minmax(0, 1fr)` so they cannot widen the page. Evidence and the list of differences: `docs/screens/DIFFERENCES.md`; capture with `frontend/e2e/screens.e2e.cjs`, compose with `scripts/compare_screens.py`.
+
 ## Accessibility
 axe-core (WCAG 2.0-2.2 A/AA) finds **no violations** on home, store (plain and filtered), search, product, login, register, cart, checkout and orders. Dialogs trap focus and return it; menus and the search combobox follow the ARIA patterns
 (keyboard: arrows, Escape, Enter); every control has a visible label or a name that starts with its visible text. Not done: per-route page titles and focus/announcement on navigation (docs/REVIEW.md O5).

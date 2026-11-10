@@ -22,11 +22,36 @@ $color-text-secondary: #dcd8e6;
 $color-text-muted: #b3aac9;
 $color-placeholder: #c4aaf0; // lighter than the measured #ad8fe4: that one is 3.9:1 on the input fill, this is above 4.5:1
 $color-border: #3c2198;
+$color-auth-page: #1f0b4f; // the sign-in / sign-up pages sit on the darkest purple (same value as the card body)
+$color-region-pink: #ff6f9f; // region label of a non-global product card
+$color-step-active: #23c299;
+$color-step-inactive: #8670b5;
 
 $layout-container-max: 1440px;
-$layout-header-height: 108px;
+$layout-header-height: 128px; // measured in the reference recording: 128 px header, then a 64 px category bar
+$layout-nav-height: 64px;
+$layout-search-width: 660px;
+$layout-search-height: 76px;
 $layout-filter-width: 264px;
 $layout-hero-height: 379px;
+$layout-checkout-max: 960px; // cart and checkout content is a narrower column than the catalogue
+
+// Type scale (px at the 1920 reference). Components take these, not their own numbers.
+$font-size-body: 1rem;
+$font-size-nav: 1.0625rem;
+$font-size-search: 1.125rem;
+$font-size-card-title: 0.9375rem;
+$font-size-card-meta: 0.875rem;
+$font-size-card-price: 1.375rem;
+$font-size-section-title: 1.5rem;
+$font-size-total: 1.75rem;
+
+// Spacing scale: multiples of 8 px
+$space-1: 8px;
+$space-2: 16px;
+$space-3: 24px;
+$space-4: 32px;
+$space-6: 48px;
 
 $font-stack: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
 

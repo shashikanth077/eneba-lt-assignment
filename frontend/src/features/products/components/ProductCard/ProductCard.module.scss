@@ -1,6 +1,7 @@
 @use '../../../../styles/mixins' as *;
 
-// Anatomy from docs/DESIGN_TOKENS.md section 6: cover 267 x 337, platform strip (27 px), title, region label, price.
+// Anatomy from docs/DESIGN_TOKENS.md section 6 and the reference recording: cover 267 x 337 with the platform strip laid over its
+// bottom edge, a two-line title, the region label (teal for Global, pink for the rest), the "From" line and the price.
 .card {
   display: flex;
   flex-direction: column;
@@ -16,6 +17,11 @@
   }
 }
 
+.media {
+  position: relative;
+  display: block;
+}
+
 .cover {
   display: block;
   width: 100%;
@@ -24,12 +30,16 @@
 }
 
 .strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
-  height: 27px;
-  padding: 0 12px;
-  background: var(--color-footer);
-  font-size: 0.75rem;
+  justify-content: center;
+  height: 32px;
+  background: rgba(21, 7, 51, 0.78);
+  font-size: var(--font-size-card-meta);
   font-weight: 700;
   color: var(--color-text-secondary);
 }
@@ -38,21 +48,26 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   padding: 16px;
 }
 
 .title {
-  font-size: 0.875rem;
+  font-size: var(--font-size-card-title);
   font-weight: 700;
   line-height: 1.4;
-  @include truncate-lines(1);
+  min-height: 2.8em; // two lines, so prices line up across a row
+  @include truncate-lines(2);
 }
 
 .region {
-  font-size: 0.8125rem;
+  font-size: var(--font-size-card-meta);
   font-weight: 700;
   text-transform: uppercase;
+  color: var(--color-region-pink);
+}
+
+.global {
   color: var(--color-mint);
 }
 

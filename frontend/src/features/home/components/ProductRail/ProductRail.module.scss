@@ -61,7 +61,7 @@
     width: 210px;
   }
   @include up(lg) {
-    width: 230px;
+    width: 267px; // card width measured on the reference (DESIGN_TOKENS.md)
   }
 }
 

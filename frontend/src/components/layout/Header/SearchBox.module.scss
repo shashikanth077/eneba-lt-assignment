@@ -15,6 +15,10 @@
   position: absolute;
   left: 14px;
   pointer-events: none;
+
+  @include up(md) {
+    left: 18px;
+  }
 }
 
 .input {
@@ -24,10 +28,12 @@
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.85);
   border-radius: var(--radius);
-  font-weight: 600;
+  font-size: var(--font-size-search);
+  font-weight: 700;
 
   @include up(md) {
-    height: 56px;
+    height: var(--search-height);
+    padding-left: 56px;
   }
 
   &::placeholder {

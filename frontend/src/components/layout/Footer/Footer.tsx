@@ -24,7 +24,22 @@ const COLUMNS = [
   },
 ];
 
-export function Footer() {
+export function Footer({ compact = false }: { compact?: boolean }) {
+  if (compact) {
+    // Checkout screens keep the footer to one quiet line, as in the reference.
+    return (
+      <footer className={styles.compact}>
+        <PageContainer>
+          <small>
+            © {new Date().getFullYear()} KEYMART · demo project · Stripe test mode: no real money is
+            involved
+          </small>
+          <Link to="/store">Store</Link>
+          <Link to="/orders">My orders</Link>
+        </PageContainer>
+      </footer>
+    );
+  }
   return (
     <footer className={styles.footer}>
       <PageContainer>

@@ -10,6 +10,10 @@
 }
 
 .hero {
+  @include full-bleed;
+  margin-top: calc(
+    -1 * var(--page-pad-y)
+  ); // the banner touches the category bar, as in the reference
   position: relative;
   height: 220px;
   overflow: hidden;
@@ -27,8 +31,8 @@
 }
 
 .skeleton {
+  @include full-bleed;
   height: 220px;
-  width: 100%;
 
   @include up(sm) {
     height: 280px;
@@ -80,7 +84,9 @@
     padding: 0 64px;
   }
   @include up(md) {
-    max-width: 60%;
+    // lines up with the container's left edge although the banner itself spans the viewport
+    padding-left: container-inset(64px);
+    max-width: calc(#{container-inset(64px)} + 55%);
   }
 }
 

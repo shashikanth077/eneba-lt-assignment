@@ -33,11 +33,16 @@ export function CartPage() {
     const issues = new Map(cart.issues.map((issue) => [issue.offerId, issue]));
     body = (
       <div className={styles.layout}>
-        <ul className={styles.items} aria-label="Cart items">
-          {cart.lines.map((line) => (
-            <CartItem key={line.offerId} line={line} issue={issues.get(line.offerId)} />
-          ))}
-        </ul>
+        <section className={styles.panel} aria-labelledby="my-cart-heading">
+          <h2 id="my-cart-heading" className={styles.panelTitle}>
+            My cart
+          </h2>
+          <ul className={styles.items} aria-label="Cart items">
+            {cart.lines.map((line) => (
+              <CartItem key={line.offerId} line={line} issue={issues.get(line.offerId)} />
+            ))}
+          </ul>
+        </section>
         <CartSummary cart={cart} />
       </div>
     );
