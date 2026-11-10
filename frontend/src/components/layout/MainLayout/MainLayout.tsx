@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from 'react-router-dom';
+import { VerifyEmailBanner } from '../../../features/auth/components/VerifyEmailBanner';
 import { useBootstrapAuth } from '../../../features/auth/useBootstrapAuth';
 import { ToastRegion } from '../../feedback/Toast';
 import { CheckoutHeader } from '../CheckoutHeader';
@@ -32,6 +33,7 @@ export function MainLayout() {
       )}
       <main id="main" tabIndex={-1} className={styles.main}>
         <PageContainer>
+          {!checkout && pathname !== '/verify-email' && <VerifyEmailBanner />}
           <Outlet />
         </PageContainer>
       </main>

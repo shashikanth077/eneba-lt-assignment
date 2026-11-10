@@ -23,6 +23,12 @@ services:
       # Stripe test mode: put your own keys in the root .env (see .env.example). Empty = payments answer 503.
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      # Verification e-mails are sent by the API (docs/EMAIL.md). Empty = not sent.
+      EMAILJS_SERVICE_ID: ${VITE_EMAILJS_SERVICE_ID:-}
+      EMAILJS_PUBLIC_KEY: ${VITE_EMAILJS_PUBLIC_KEY:-}
+      EMAILJS_AUTH_TEMPLATE_ID: ${VITE_EMAILJS_AUTH_TEMPLATE_ID:-}
+      EMAILJS_PRIVATE_KEY: ${EMAILJS_PRIVATE_KEY:-}
+      SUPPORT_EMAIL: ${VITE_SUPPORT_EMAIL:-support@keymart.example}
     volumes:
       - ./backend:/var/www/html
     depends_on:
@@ -57,7 +63,7 @@ services:
       VITE_STRIPE_PUBLISHABLE_KEY: ${VITE_STRIPE_PUBLISHABLE_KEY:-}
       VITE_EMAILJS_SERVICE_ID: ${VITE_EMAILJS_SERVICE_ID:-}
       VITE_EMAILJS_PUBLIC_KEY: ${VITE_EMAILJS_PUBLIC_KEY:-}
-      VITE_EMAILJS_WELCOME_TEMPLATE_ID: ${VITE_EMAILJS_WELCOME_TEMPLATE_ID:-}
+      VITE_EMAILJS_AUTH_TEMPLATE_ID: ${VITE_EMAILJS_AUTH_TEMPLATE_ID:-}
       VITE_EMAILJS_ORDER_TEMPLATE_ID: ${VITE_EMAILJS_ORDER_TEMPLATE_ID:-}
     ports:
       - "5173:5173"

@@ -1,0 +1,13 @@
+{
+  "to_name": "Ada",
+  "to_email": "ada@example.com",
+  "email_subject": "Verify your email address – KEYMART",
+  "email_heading": "Verify your email address",
+  "email_message": "Thanks for registering with KEYMART. Please verify your email address to activate your account and access all marketplace features.",
+  "action_text": "Verify Email Address",
+  "action_url": "https://keymart.example/verify-email?token=0f3c9a7d5b1e48c2a6d90b7e41f8c3d25a9e60b4c7d81f2e3a5b6c9d0e1f2a3b",
+  "expiry_message": "24 hours",
+  "company_name": "KEYMART",
+  "support_email": "support@keymart.example",
+  "current_year": "2026"
+}

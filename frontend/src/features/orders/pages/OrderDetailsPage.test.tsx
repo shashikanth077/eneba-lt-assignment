@@ -34,7 +34,7 @@ beforeEach(() => {
   localStorage.clear();
   vi.stubEnv('VITE_EMAILJS_SERVICE_ID', 'svc');
   vi.stubEnv('VITE_EMAILJS_PUBLIC_KEY', 'pub');
-  vi.stubEnv('VITE_EMAILJS_WELCOME_TEMPLATE_ID', 'tpl_welcome');
+  vi.stubEnv('VITE_EMAILJS_AUTH_TEMPLATE_ID', 'tpl_welcome');
   vi.stubEnv('VITE_EMAILJS_ORDER_TEMPLATE_ID', 'tpl_order');
 });
 afterEach(() => {
@@ -253,8 +253,14 @@ describe('confirmation email', () => {
       { publicKey: string },
     ];
     expect([service, template, options]).toEqual(['svc', 'tpl_order', { publicKey: 'pub' }]);
-    expect(params).toMatchObject({ to_email: 'ana@example.com', order_id: '7' });
-    expect(params.order_items).toContain('2 x Alpha Quest (GameNest)');
+    expect(params).toMatchObject({
+      to_email: 'ana@example.com',
+      order_number: '7',
+      payment_status: 'Paid',
+      order_details_url: `${window.location.origin}/orders/7`,
+    });
+    expect(params.order_items).toContain('Alpha Quest');
+    expect(params.order_items).toContain('Sold by GameNest · Qty 2');
     const everything = JSON.stringify(send.mock.calls);
     expect(everything).not.toContain(KEY_A);
     expect(everything).not.toContain(KEY_B);

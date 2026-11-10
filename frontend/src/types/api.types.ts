@@ -16,6 +16,8 @@ export interface User {
   id: number;
   email: string;
   displayName: string;
+  /** false until the buyer opens the link from the verification e-mail. */
+  emailVerified: boolean;
 }
 
 export interface UserResponse {

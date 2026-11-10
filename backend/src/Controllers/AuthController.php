@@ -6,8 +6,10 @@ namespace App\Controllers;
 
 use App\Auth\SessionCookie;
 use App\Auth\TokenService;
+use App\Exceptions\ApiException;
 use App\Http\JsonResponse;
 use App\Services\AuthService;
+use App\Services\EmailVerificationService;
 use App\Support\ClientIp;
 use App\Support\Validator;
 use Psr\Http\Message\ResponseInterface;
@@ -19,6 +21,7 @@ final class AuthController
         private readonly AuthService $auth,
         private readonly TokenService $tokens,
         private readonly SessionCookie $cookie,
+        private readonly EmailVerificationService $verification,
         /** how many proxies in front of the app we trust to append to X-Forwarded-For (0 = none), see ClientIp */
         private readonly int $trustedProxies,
     ) {
@@ -33,6 +36,7 @@ final class AuthController
         ]);
 
         $user = $this->auth->register($data['email'], $data['password'], $data['displayName']);
+        $this->verification->sendTo($user['id'], $user['email'], $user['display_name']); // best effort: never fails the sign-up
 
         return $this->signedIn($response, $user, 201);
     }
@@ -64,12 +68,33 @@ final class AuthController
         return $this->cookie->clear($response->withStatus(204));
     }
 
+    /** Public: the one-time token in the link is the proof (the link may be opened in another browser). */
+    public function verifyEmail(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $data = Validator::validate($this->body($request), ['token' => 'required|string|min:32|max:128']);
+        $this->verification->verify($data['token']);
+
+        return JsonResponse::write($response, ['verified' => true]);
+    }
+
+    /** Signed in: sends a new link (the old ones stop working). Limited per account in the routes. */
+    public function resendVerification(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $user = $request->getAttribute('user');
+        if ($user['email_verified_at'] !== null) {
+            throw ApiException::conflict('already_verified', 'This email address is already verified');
+        }
+        $this->verification->sendTo($user['id'], $user['email'], $user['display_name']);
+
+        return JsonResponse::write($response, ['sent' => true], 202);
+    }
+
     public function me(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         return JsonResponse::write($response, ['user' => self::present($request->getAttribute('user'))]);
     }
 
-    /** @param array{id: int, email: string, display_name: string, token_version: int} $user */
+    /** @param array{id: int, email: string, display_name: string, email_verified_at: ?string, token_version: int} $user */
     private function signedIn(ResponseInterface $response, array $user, int $status): ResponseInterface
     {
         $jwt = $this->tokens->issue($user['id'], $user['token_version']);
@@ -78,12 +103,12 @@ final class AuthController
     }
 
     /**
-     * @param array{id: int, email: string, display_name: string} $user
-     * @return array{id: int, email: string, displayName: string}
+     * @param array{id: int, email: string, display_name: string, email_verified_at: ?string} $user
+     * @return array{id: int, email: string, displayName: string, emailVerified: bool}
      */
     private static function present(array $user): array
     {
-        return ['id' => $user['id'], 'email' => $user['email'], 'displayName' => $user['display_name']];
+        return ['id' => $user['id'], 'email' => $user['email'], 'displayName' => $user['display_name'], 'emailVerified' => $user['email_verified_at'] !== null];
     }
 
     /** @return array<string, mixed> */

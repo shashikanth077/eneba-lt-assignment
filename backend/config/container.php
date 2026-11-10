@@ -11,6 +11,9 @@ use App\Home\Blocks\BestSellersBlock;
 use App\Home\Blocks\DealsBlock;
 use App\Home\Blocks\NewReleasesBlock;
 use App\Home\HomeBlockRegistry;
+use App\Mail\EmailJsVerificationMailer;
+use App\Mail\NullVerificationMailer;
+use App\Mail\VerificationMailer;
 use App\Payment\PaymentGateway;
 use App\Payment\StripePaymentGateway;
 use App\Payment\StripeWebhookVerifier;
@@ -23,6 +26,7 @@ use App\Services\CheckoutService;
 use App\Services\OrderLifecycle;
 use App\Repositories\LoginAttemptRepository;
 use App\Services\AuthService;
+use App\Services\EmailVerificationService;
 use App\Services\LoginThrottle;
 use App\Support\Database;
 use App\Support\KeyCipher;
@@ -78,10 +82,22 @@ return static function (array $settings, array $overrides = []): ContainerInterf
             $checkout['currency'],
             $checkout['reservation_minutes'],
         ),
+        VerificationMailer::class => static function () use ($settings): VerificationMailer {
+            $mail = $settings['mail'];
+            $ready = $mail['service_id'] !== '' && $mail['auth_template_id'] !== '' && $mail['public_key'] !== '' && $mail['private_key'] !== '';
+
+            return $ready ? new EmailJsVerificationMailer($mail) : new NullVerificationMailer();
+        },
+        EmailVerificationService::class => static fn (ContainerInterface $c): EmailVerificationService => new EmailVerificationService(
+            $c->get(PDO::class),
+            $c->get(VerificationMailer::class),
+            $settings,
+        ),
         AuthController::class => static fn (ContainerInterface $c): AuthController => new AuthController(
             $c->get(AuthService::class),
             $c->get(TokenService::class),
             $c->get(SessionCookie::class),
+            $c->get(EmailVerificationService::class),
             $auth['trusted_proxies'],
         ),
     ]);

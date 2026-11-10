@@ -8,7 +8,7 @@ use App\Exceptions\ApiException;
 use PDO;
 use PDOException;
 
-/** @phpstan-type User array{id: int, email: string, password_hash: string, display_name: string, token_version: int} */
+/** @phpstan-type User array{id: int, email: string, password_hash: string, display_name: string, email_verified_at: ?string, token_version: int} */
 final class UserRepository
 {
     public function __construct(private readonly PDO $pdo)

@@ -4,6 +4,8 @@ export const endpoints = {
   login: '/auth/login',
   register: '/auth/register',
   logout: '/auth/logout',
+  verifyEmail: '/auth/verify-email',
+  resendVerification: '/auth/resend-verification',
   products: '/products',
   product: (slug: string) => `/products/${encodeURIComponent(slug)}`,
   filters: '/filters',

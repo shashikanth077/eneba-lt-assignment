@@ -94,9 +94,8 @@ with `aria-sort`, rating as `role="img"` text, "Best price" as a chip + border (
   hidden behind "Reveal key" (Hide, Copy with a clipboard fallback message); they are not in the list, URL, storage or e-mails, and leaving the page dispatches `leaveOrder`, which removes them from the store. Someone else's order is "not found".
 - **When an order becomes paid** the saga refreshes the cart (bought lines left it), invalidates the orders list and sends the receipt e-mail once.
 
-## E-mails (EmailJS, browser, public key; docs/ARCHITECTURE.md)
-A welcome e-mail after registration (to the address the *server* stored) and a receipt when an order this browser paid for becomes paid. Params are copied field by field (`to_email, to_name, order_id, order_items, order_total`) so a key cannot be
-included; "this browser paid" is a localStorage flag set when Pay is pressed and consumed once. Not configured or failing: skipped silently. Limits and the O1 abuse risk are in docs/REVIEW.md.
+## E-mails (EmailJS; docs/EMAIL.md)
+Central service `services/email/` (`emailConfig`, `emailTypes`, `emailHelpers`, `emailService`) with three functions: `sendRegistrationEmail` and `sendVerificationEmail` share the AUTH template, `sendOrderConfirmationEmail` uses the ORDER template. The verification link is created and mailed by the **API** (it is a secret); the browser only asks for a new one. The order e-mail goes out when the server reports the order paid ("this browser paid" is a localStorage flag set when Pay is pressed and consumed once). Values are validated and HTML-escaped; no key can be included. Not configured or failing: skipped, with a result instead of an exception. `/verify-email` page and a banner for unverified accounts live in `features/auth`. Full description, EmailJS dashboard steps, demo accounts and the test checklist: docs/EMAIL.md. Limits and the O1 abuse risk are in docs/REVIEW.md.
 Config (`frontend/.env`): `VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_EMAILJS_*`, optional `VITE_API_BASE_URL`; backend keeps `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` (run `stripe listen --forward-to localhost:8080/api/webhooks/stripe`).
 
 ## Styling
