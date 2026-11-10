@@ -28,7 +28,24 @@ themselves (no accounts were available): follow the steps, and if a button is na
 
 ---
 
-## 0. Decide the names first (the URLs depend on each other)
+## Option B: one Vercel project with two services (P21)
+
+The repository root has a `vercel.json` that declares **both** services: `backend` (`backend/Dockerfile`, `runtime: container`) and `frontend` (Vite),
+with `/api/(.*)` routed to the backend and everything else to the frontend, on **one domain**. With it, Render is not needed, there is no
+`YOUR-API-NAME` address to write into a file, and Stripe's webhook goes to `https://<project>.vercel.app/api/webhooks/stripe`.
+
+- Import the repository in Vercel with **Root Directory = the repository root** (not `frontend`), and set the Render variables of the table in step 3
+  and the Vercel variables of step 4 on the same project (one shared environment). `APP_URL` is the project's own address.
+- Test locally with `vercel dev` (starts both services).
+- **Not verified:** Vercel's multi-service mode and container runtime are newer than this guide's other steps and could not be tried here (no account).
+  Open questions to check on the first deploy: which port the container must listen on (the image uses `$PORT`, default 80), whether the container
+  sleeps and wakes like Render Free (the cold-start notes then apply), and whether the free plan allows the container runtime. If it does not work,
+  fall back to Option A below: restore `frontend/vercel.json` from git history (commit `a2f43fd`), delete the root `vercel.json`, and use Render.
+- `TRUSTED_PROXY_HOPS` is probably `1` in this layout (one proxy layer); the shared-bucket fallback applies if unsure.
+
+The rest of this file describes Option A (Vercel + Render) in detail; the database, Stripe, environment-variable and troubleshooting sections apply to both.
+
+## 0. Decide the names first (Option A) (the URLs depend on each other)
 
 The API needs the web address of the frontend, and the frontend's `vercel.json` needs the address of the API. Choose both names now:
 
