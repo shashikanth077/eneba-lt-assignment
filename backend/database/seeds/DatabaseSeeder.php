@@ -39,6 +39,7 @@ final class DatabaseSeeder
             $this->seedOffersKeysDealsStats($products, array_values($sellerIds));
             $this->seedBanners();
             $this->seedHomeBlocks();
+            $this->ensureUpcomingProducts();
             $this->seedDemoUsers();
             $this->seedDemoOrders();
             $this->pdo->commit();
@@ -262,9 +263,13 @@ final class DatabaseSeeder
     {
         $rows = [
             ['banner', 'hero', 'Featured', '/api/home/banners', 1, '{"autoplayMs":6000}'],
-            ['best_sellers', 'carousel', 'Best sellers', '/api/home/best-sellers', 2, '{"limit":10}'],
-            ['deals', 'carousel', 'Hot deals', '/api/home/deals', 3, '{"limit":10}'],
-            ['new_releases', 'carousel', 'New releases', '/api/home/new-releases', 4, '{"limit":10}'],
+            ['categories', 'shortcuts', 'Categories', '/api/home/categories', 2, '{"genres":4}'],
+            ['recently_viewed', 'recent', 'Recently viewed', '', 3, '{"limit":6}'], // no endpoint: drawn from the visitor's own history
+            ['recommended', 'carousel', 'Recommended for you', '/api/home/recommended', 4, '{"limit":10}'],
+            ['best_sellers', 'carousel', 'Best sellers', '/api/home/best-sellers', 5, '{"limit":10}'],
+            ['deals', 'carousel', 'Hot deals', '/api/home/deals', 6, '{"limit":10}'],
+            ['new_releases', 'carousel', 'New releases', '/api/home/new-releases', 7, '{"limit":10}'],
+            ['upcoming', 'carousel', 'Upcoming games', '/api/home/upcoming', 8, '{"limit":10}'],
         ];
         $this->upsert('home_blocks', ['slug', 'type', 'title', 'endpoint', 'position', 'config'], $rows, ['type', 'title', 'endpoint', 'position', 'config']);
     }
@@ -437,5 +442,17 @@ final class DatabaseSeeder
                 $qty,
             ))->execute([$orderId, $paidAt, $offer['id']]);
         }
+    }
+
+    /**
+     * The "Upcoming games" row needs products whose release date is still ahead. Demo data ages (every date eventually passes), so
+     * when NO product is upcoming, a few are scheduled relative to today. Skipped when some already are, so a re-run changes nothing.
+     */
+    private function ensureUpcomingProducts(): void
+    {
+        $this->pdo->exec(
+            'UPDATE products SET release_date = DATE_ADD(CURDATE(), INTERVAL (id % 9) * 11 + 7 DAY)
+             WHERE id % 10 = 3 AND NOT EXISTS (SELECT 1 FROM (SELECT id FROM products WHERE release_date > CURDATE() LIMIT 1) future)',
+        );
     }
 }

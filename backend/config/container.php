@@ -8,6 +8,9 @@ use App\Auth\TokenService;
 use App\Controllers\AuthController;
 use App\Home\Blocks\BannersBlock;
 use App\Home\Blocks\BestSellersBlock;
+use App\Home\Blocks\CategoriesBlock;
+use App\Home\Blocks\RecommendedBlock;
+use App\Home\Blocks\UpcomingBlock;
 use App\Home\Blocks\DealsBlock;
 use App\Home\Blocks\NewReleasesBlock;
 use App\Home\HomeBlockRegistry;
@@ -64,6 +67,9 @@ return static function (array $settings, array $overrides = []): ContainerInterf
         CacheFactory::class => static fn (): CacheFactory => new CacheFactory($settings['cache']['driver'], $settings['cache']['dir']),
         HomeBlockRegistry::class => static fn (ContainerInterface $c): HomeBlockRegistry => new HomeBlockRegistry($c, require __DIR__ . '/home.php'),
         BannersBlock::class => static fn (ContainerInterface $c): BannersBlock => new BannersBlock($c->get(PDO::class), $blockCache($c, BannersBlock::SLUG)),
+        CategoriesBlock::class => static fn (ContainerInterface $c): CategoriesBlock => new CategoriesBlock($c->get(PDO::class), $blockCache($c, CategoriesBlock::SLUG)),
+        RecommendedBlock::class => static fn (ContainerInterface $c): RecommendedBlock => new RecommendedBlock($c->get(PDO::class), $blockCache($c, RecommendedBlock::SLUG)),
+        UpcomingBlock::class => static fn (ContainerInterface $c): UpcomingBlock => new UpcomingBlock($c->get(PDO::class), $blockCache($c, UpcomingBlock::SLUG)),
         BestSellersBlock::class => static fn (ContainerInterface $c): BestSellersBlock => new BestSellersBlock($c->get(PDO::class), $blockCache($c, BestSellersBlock::SLUG)),
         DealsBlock::class => static fn (ContainerInterface $c): DealsBlock => new DealsBlock($c->get(PDO::class), $blockCache($c, DealsBlock::SLUG)),
         NewReleasesBlock::class => static fn (ContainerInterface $c): NewReleasesBlock => new NewReleasesBlock($c->get(PDO::class), $blockCache($c, NewReleasesBlock::SLUG)),

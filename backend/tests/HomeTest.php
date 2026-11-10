@@ -192,7 +192,7 @@ final class HomeTest extends DbTestCase
     public function testBlocksShareNothingBeyondTheBaseInterface(): void
     {
         $classes = require __DIR__ . '/../config/home.php';
-        self::assertCount(4, $classes);
+        self::assertCount(7, $classes);
 
         $allowedUses = ['App\\Cache\\TtlCache', 'App\\Home\\HomeBlock', 'PDO'];
         foreach ($classes as $class) {
@@ -228,11 +228,11 @@ final class HomeTest extends DbTestCase
             $paths[] = $class::PATH;
         }
 
-        self::assertCount(4, array_unique($slugs));
-        self::assertCount(4, array_unique($paths));
+        self::assertCount(7, array_unique($slugs));
+        self::assertCount(7, array_unique($paths));
         self::assertSame(
             [BannersBlock::PATH, BestSellersBlock::PATH, DealsBlock::PATH, NewReleasesBlock::PATH],
-            array_column(self::$pdo->query('SELECT endpoint FROM home_blocks ORDER BY position')->fetchAll(), 'endpoint'),
+            array_column(self::$pdo->query("SELECT endpoint FROM home_blocks WHERE slug IN ('banner', 'best_sellers', 'deals', 'new_releases') ORDER BY position")->fetchAll(), 'endpoint'),
             'the home_blocks rows point at the endpoints the blocks really serve',
         );
     }

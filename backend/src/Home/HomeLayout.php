@@ -8,7 +8,7 @@ use App\Repositories\HomeBlockRepository;
 
 /**
  * The homepage layout: which blocks are shown, in which order, rendered by which frontend component (`type`) and fetched
- * from which endpoint. Rows that are disabled, or that name a block without a backend implementation, are left out, so the
+ * from which endpoint. Rows that are disabled, or that name a block with an endpoint but without a backend implementation, are left out, so the
  * frontend never receives an endpoint that would answer 404. The layout is deliberately NOT cached: it is one tiny query,
  * and disabling a block should take effect immediately.
  */
@@ -25,7 +25,8 @@ final class HomeLayout
     {
         $blocks = [];
         foreach ($this->rows->enabled() as $row) {
-            if ($this->registry->has($row['slug'])) {
+            // a row with no endpoint is drawn entirely in the browser (e.g. "recently viewed", which only the visitor's browser knows)
+            if ($row['endpoint'] === '' || $this->registry->has($row['slug'])) {
                 $blocks[] = [
                     'id' => $row['slug'],
                     'type' => $row['type'],
