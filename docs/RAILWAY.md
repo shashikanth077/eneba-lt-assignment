@@ -64,7 +64,8 @@ the migrations in order, the ledger, then `mysqldump --no-create-info --complete
    KEY_ENCRYPTION_KEY='<your key>' JWT_SECRET=x APP_ENV=local php bin/seed.php
    ```
    (`APP_ENV=local` here only silences the production safety check for this one command; nothing is served.) Expect `game_keys` about 14,000.
-   Alternatively set `SEED_ON_START=always` for one deploy of the container and then remove it.
+   **Easiest:** set `SEED_ON_START=if-empty` on the backend service and redeploy. Since P24 "empty" means *no game keys at all*, so a database imported from this file gets its keys
+   at the first start, encrypted with the service's own `KEY_ENCRYPTION_KEY`; later starts skip it. `GET /api/health` shows `"stock":"empty"` until keys exist and `"stock":"ok"` afterwards.
 
 ## 5. Vercel
 
