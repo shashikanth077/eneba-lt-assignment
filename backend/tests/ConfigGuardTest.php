@@ -33,6 +33,15 @@ final class ConfigGuardTest extends TestCase
         ConfigGuard::assertSafe($this->settings()); // does not throw
     }
 
+    public function testMissingSecretsAreReportedAtStartInsteadOfFailingRequestByRequest(): void
+    {
+        $problems = ConfigGuard::problems($this->settings(['auth' => ['jwt_secret' => ''], 'keys' => ['encryption' => '']]));
+
+        self::assertCount(2, $problems);
+        self::assertStringContainsString('JWT_SECRET is not set', $problems[0]);
+        self::assertStringContainsString('KEY_ENCRYPTION_KEY is not set', $problems[1]);
+    }
+
     public function testThePublishedJwtSecretIsRefusedBecauseItLetsAnyoneForgeASession(): void
     {
         $settings = $this->settings(['auth' => ['jwt_secret' => ConfigGuard::KNOWN_JWT_SECRETS[0]]]);

@@ -45,6 +45,12 @@ final class ConfigGuard
             return [];
         }
         $problems = [];
+        if (strlen((string) $settings['auth']['jwt_secret']) < 32) {
+            $problems[] = 'JWT_SECRET is not set (or shorter than 32 characters). Set it in the service environment: php -r "echo bin2hex(random_bytes(32));"';
+        }
+        if ((string) $settings['keys']['encryption'] === '') {
+            $problems[] = 'KEY_ENCRYPTION_KEY is not set. Set it in the service environment: php -r "echo base64_encode(random_bytes(32));"';
+        }
         if (in_array($settings['auth']['jwt_secret'], self::KNOWN_JWT_SECRETS, true)) {
             $problems[] = 'JWT_SECRET is the placeholder from .env.example: anyone can forge a session for any user. Generate one: php -r "echo bin2hex(random_bytes(32));"';
         }
