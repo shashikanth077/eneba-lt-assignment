@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Exceptions\ApiException;
 use App\Repositories\UserRepository;
+use App\Support\DemoAccounts;
 
 /** @phpstan-import-type User from UserRepository */
 final class AuthService
@@ -56,6 +57,40 @@ final class AuthService
         }
 
         return $user;
+    }
+
+    /**
+     * @return User
+     */
+    public function updateProfile(int $userId, string $displayName): array
+    {
+        $this->users->updateDisplayName($userId, $displayName);
+
+        return $this->users->findById($userId) ?? throw new \RuntimeException('User vanished');
+    }
+
+    /**
+     * Changes the password and signs every other device out (the token version is bumped; the caller issues a fresh cookie).
+     *
+     * @return User the user with the new token version
+     * @throws ApiException 403 demo_account | 422 wrong current password / unchanged password
+     */
+    public function changePassword(int $userId, string $current, string $new): array
+    {
+        $user = $this->users->findById($userId) ?? throw ApiException::unauthorized();
+        if (DemoAccounts::isDemo($user['email'])) {
+            throw new ApiException(403, 'demo_account', 'Demo accounts keep their password so the next reviewer can sign in. Register your own account to try this.');
+        }
+        if (!password_verify($current, $user['password_hash'])) {
+            throw new \App\Exceptions\ValidationException(['currentPassword' => ['Your current password is not correct']]);
+        }
+        if ($current === $new) {
+            throw new \App\Exceptions\ValidationException(['newPassword' => ['Choose a password different from the current one']]);
+        }
+        $this->users->updatePasswordHash($userId, password_hash($new, PASSWORD_ARGON2ID));
+        $this->users->bumpTokenVersion($userId);
+
+        return $this->users->findById($userId) ?? throw new \RuntimeException('User vanished');
     }
 
     /** Invalidates every token issued so far for this user (token_version claim no longer matches). */

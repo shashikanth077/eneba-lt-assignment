@@ -42,6 +42,11 @@ final class UserRepository
         return (int) $this->pdo->lastInsertId();
     }
 
+    public function updateDisplayName(int $id, string $displayName): void
+    {
+        $this->pdo->prepare('UPDATE users SET display_name = ? WHERE id = ?')->execute([$displayName, $id]);
+    }
+
     public function bumpTokenVersion(int $id): void
     {
         $this->pdo->prepare('UPDATE users SET token_version = token_version + 1 WHERE id = ?')->execute([$id]);
