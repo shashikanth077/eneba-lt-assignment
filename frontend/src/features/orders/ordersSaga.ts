@@ -1,4 +1,4 @@
-import { all, call, delay, put, race, select, take, takeLatest } from 'redux-saga/effects';
+import { all, call, delay, put, race, select, spawn, take, takeLatest } from 'redux-saga/effects';
 import type { RootState } from '../../app/store';
 import { sendOrderConfirmationEmail } from '../../services/email/emailService';
 import { takeReceiptDue } from '../../services/email/receiptFlag';
@@ -38,7 +38,9 @@ function* afterPaid(order: OrderDetail): Generator {
   yield put(invalidateOrdersList());
   const user = (yield select(selectUser)) as User | null;
   if (user && takeReceiptDue(order.id)) {
-    yield call(sendOrderConfirmationEmail, { order, user }); // never throws
+    // spawned, not called: the page that polls leaves for the order page the moment the order is paid, which stops this saga; the
+    // e-mail must still go out.
+    yield spawn(sendOrderConfirmationEmail, { order, user }); // never throws
   }
 }
 

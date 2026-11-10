@@ -19,6 +19,15 @@ interface PaymentGateway
      */
     public function createIntent(int $amountCents, string $currency, int $orderId, string $idempotencyKey): array;
 
+    /**
+     * Asks the provider (server to server, with the secret key) what really happened to a payment. This is how an order is confirmed
+     * when the webhook has not arrived, without ever trusting the browser.
+     *
+     * @return array{id: string, status: string, amount: int, amount_received: int, currency: string}
+     * @throws PaymentGatewayException
+     */
+    public function retrieveIntent(string $paymentIntentId): array;
+
     /** Stops a payment that was not completed, so it can no longer succeed after we released the keys. */
     public function cancelIntent(string $paymentIntentId): void;
 
