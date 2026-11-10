@@ -1,0 +1,28 @@
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  border-left: 4px solid;
+  background: rgba(0, 0, 0, 0.3);
+}
+.info {
+  border-color: var(--color-mint);
+}
+.success {
+  border-color: var(--color-green);
+}
+.warning {
+  border-color: var(--color-yellow);
+}
+.error {
+  border-color: #ff6f9f;
+}
+.body {
+  flex: 1;
+  min-width: 0;
+}
+.action {
+  flex: none;
+}

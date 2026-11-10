@@ -1,0 +1,12 @@
+@use '../../../styles/mixins' as *;
+
+// minmax(0, 1fr): a grid column may shrink below its content, otherwise a wide scrolling rail stretches the whole page
+.blocks {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+
+  @include up(md) {
+    gap: 48px;
+  }
+}

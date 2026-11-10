@@ -1,0 +1,56 @@
+@use '../../../styles/mixins' as *;
+
+.nav {
+  background: var(--color-nav-bar);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 48px;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  @include up(md) {
+    min-height: 60px;
+    gap: 8px;
+  }
+}
+
+.link,
+.categories {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  min-height: 44px;
+  padding: 0 16px;
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.current {
+  border-bottom-color: var(--color-yellow);
+}
+
+.skeleton {
+  flex: none;
+  height: 28px;
+}

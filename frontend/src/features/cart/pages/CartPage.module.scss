@@ -1,0 +1,21 @@
+@use '../../../styles/mixins' as *;
+
+.page {
+  display: grid;
+  gap: 24px;
+}
+
+.layout {
+  display: grid;
+  gap: 24px;
+  align-items: start;
+
+  @include up(md) {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+}
+
+.items {
+  display: grid;
+  gap: 12px;
+}

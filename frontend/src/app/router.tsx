@@ -1,49 +1,58 @@
 import { createBrowserRouter, type RouteObject } from 'react-router-dom';
-import { AppShell } from '../components/layout/AppShell';
-import { LoadingState } from '../components/state/LoadingState';
-import { ProtectedRoute } from '../features/auth/ProtectedRoute';
+import { MainLayout } from '../components/layout/MainLayout';
+import { Loader } from '../components/common';
+import { ProtectedRoute } from '../features/auth/components/ProtectedRoute';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 
 /**
  * Every screen is its own chunk (loaded when first visited) so the first paint on a phone stays small. A page module exports one
- * named component; adding a route is one line here.
+ * named component; adding a route is one entry here.
  */
 export const routes: RouteObject[] = [
   {
     path: '/',
-    element: <AppShell />,
+    element: <MainLayout />,
     errorElement: <RouteErrorBoundary />,
     // shown while the first page's code is still loading (the very first paint of a lazy route)
-    HydrateFallback: () => <LoadingState label="Loading KEYMART…" minHeight="100vh" />,
+    HydrateFallback: () => <Loader label="Loading KEYMART…" />,
     children: [
       {
         index: true,
-        lazy: async () => ({ Component: (await import('../features/home/HomePage')).HomePage }),
+        lazy: async () => ({
+          Component: (await import('../features/home/pages/HomePage')).HomePage,
+        }),
       },
       {
         path: 'store',
-        lazy: async () => ({ Component: (await import('../features/store/StorePage')).StorePage }),
+        lazy: async () => ({
+          Component: (await import('../features/products/pages/ProductListingPage'))
+            .ProductListingPage,
+        }),
       },
       {
         path: 'search',
         lazy: async () => ({
-          Component: (await import('../features/search/SearchPage')).SearchPage,
+          Component: (await import('../features/products/pages/SearchResultsPage'))
+            .SearchResultsPage,
         }),
       },
       {
         path: 'product/:slug',
         lazy: async () => ({
-          Component: (await import('../features/product/ProductPage')).ProductPage,
+          Component: (await import('../features/products/pages/ProductDetailsPage'))
+            .ProductDetailsPage,
         }),
       },
       {
         path: 'login',
-        lazy: async () => ({ Component: (await import('../features/auth/LoginPage')).LoginPage }),
+        lazy: async () => ({
+          Component: (await import('../features/auth/pages/LoginPage')).LoginPage,
+        }),
       },
       {
         path: 'register',
         lazy: async () => ({
-          Component: (await import('../features/auth/RegisterPage')).RegisterPage,
+          Component: (await import('../features/auth/pages/RegisterPage')).RegisterPage,
         }),
       },
       {
@@ -52,24 +61,42 @@ export const routes: RouteObject[] = [
         children: [
           {
             path: 'cart',
-            lazy: async () => ({ Component: (await import('../features/cart/CartPage')).CartPage }),
+            lazy: async () => ({
+              Component: (await import('../features/cart/pages/CartPage')).CartPage,
+            }),
           },
           {
             path: 'checkout',
             lazy: async () => ({
-              Component: (await import('../features/checkout/CheckoutPage')).CheckoutPage,
+              Component: (await import('../features/checkout/pages/CheckoutPage')).CheckoutPage,
             }),
           },
           {
-            path: 'account/orders',
+            path: 'orders',
             lazy: async () => ({
-              Component: (await import('../features/orders/AccountOrdersPage')).AccountOrdersPage,
+              Component: (await import('../features/orders/pages/OrderHistoryPage'))
+                .OrderHistoryPage,
             }),
           },
           {
-            path: 'account/orders/:id',
+            path: 'orders/:id',
             lazy: async () => ({
-              Component: (await import('../features/orders/OrderPage')).OrderPage,
+              Component: (await import('../features/orders/pages/OrderDetailsPage'))
+                .OrderDetailsPage,
+            }),
+          },
+          {
+            path: 'payment/success',
+            lazy: async () => ({
+              Component: (await import('../features/checkout/pages/PaymentResultPage'))
+                .PaymentSuccessPage,
+            }),
+          },
+          {
+            path: 'payment/cancel',
+            lazy: async () => ({
+              Component: (await import('../features/checkout/pages/PaymentResultPage'))
+                .PaymentCancelPage,
             }),
           },
         ],
@@ -77,7 +104,7 @@ export const routes: RouteObject[] = [
       {
         path: '*',
         lazy: async () => ({
-          Component: (await import('../features/home/NotFoundPage')).NotFoundPage,
+          Component: (await import('../features/home/pages/NotFoundPage')).NotFoundPage,
         }),
       },
     ],

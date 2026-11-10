@@ -24,12 +24,12 @@ or a safeguard the docs promise does not work. *Medium*: needs a precondition or
 | O3 | Medium | Concurrency | Abandoned checkouts keep stock hidden until some later checkout/order poll releases it (no job, expiry is lazy) | Open |
 | O4 | Medium | Security / abuse | Stock hoarding is only rate-limited, not prevented: many accounts/addresses can still reserve keys for 15 min each; no e-mail verification | Open |
 | O5 | Medium | Accessibility | No per-route `<title>`; focus and announcements do not move on client-side navigation (WCAG 2.4.2, 2.4.3, 4.1.3) | Open |
-| O6 | Medium | Accessibility | Carousel dots are 10 x 10 px (2.5.8) and autoplay has no explicit pause control, only hover/focus (2.2.2) | Open |
-| O7 | Medium | Accessibility | Accessible name does not contain the visible text: "Add GameNest's offer to cart" vs "Add to cart", the account menu (2.5.3) | Open |
-| O8 | Medium | Accessibility | In-text links are yellow with no underline, 1.45:1 against the surrounding text (1.4.1); placeholder text 3.9:1 (1.4.3) | Open |
+| O6 | Medium | Accessibility | Carousel dots are 10 x 10 px (2.5.8) and autoplay has no explicit pause control, only hover/focus (2.2.2) | **Fixed in the P16 rewrite** (24 px targets, pause button) |
+| O7 | Medium | Accessibility | Accessible name does not contain the visible text: "Add GameNest's offer to cart" vs "Add to cart", the account menu (2.5.3) | **Fixed in the P16 rewrite** |
+| O8 | Medium | Accessibility | In-text links are yellow with no underline, 1.45:1 against the surrounding text (1.4.1); placeholder text 3.9:1 (1.4.3) | **Fixed in the P16 rewrite** (underlined in-text links, `#c4aaf0` placeholder) |
 | O9 | Medium | Performance | Search and suggest scan `products` with `LIKE '%x%'` per call; fine at 120 rows, linear beyond (docs/SEARCH.md: 144 ms at 100k) | Open (now bounded by S3's limit) |
 | O10 | Low | Performance | Cart/availability use `COUNT(*)` over available keys per offer; cost grows with stock per offer | Open |
-| O11 | Low | Performance | Entry bundle ~511 kB (161 kB gzip); web font is a render-blocking third-party stylesheet | Open |
+| O11 | Low | Performance | Entry bundle ~511 kB (161 kB gzip); web font is a render-blocking third-party stylesheet | Bundle **fixed in P16** (259 kB / 83 kB gzip without MUI); font still open |
 | O12 | Low | Security | The SPA has no hosting security headers (CSP, frame-ancestors) configured; the API now sends its own | Open |
 | O13 | Low | Security | Registration reveals existing e-mails (409); password policy is length 8 only, no breached-password check | Accepted trade-off |
 | O14 | Low | Concurrency | If the process dies after committing `refund_needed` but before calling the refund API, nothing retries it (logged for a human) | Open |
@@ -119,3 +119,6 @@ cd ../frontend && npx vitest run src/api                                   # the
 ```
 Manual repro of S1 against a running API (`TRUST_PROXY=true`): `for i in $(seq 12); do curl -s -o /dev/null -w "%{http_code} " -X POST localhost:8080/api/auth/login -H 'Content-Type: application/json' -H 'X-Requested-With: fetch' -H "X-Forwarded-For: 10.0.0.$i, 203.0.113.9" -d '{"email":"victim@example.com","password":"x"}'; done`
 printed twelve `401`s before the fix and `401 x5` then `429`s after it. The accessibility findings reproduce with axe-core run through Playwright on the pages named above.
+
+
+**Update (P16):** the frontend rewrite (Redux Saga + Axios + SCSS modules, no MUI) resolved O6, O7 and O8; axe-core now reports no violations on the ten pages tested. O5 (route titles and focus) and the font remain open.

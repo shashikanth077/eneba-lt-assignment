@@ -1,0 +1,137 @@
+@use '../../../styles/mixins' as *;
+
+.header {
+  background: var(--color-page);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    'logo . actions'
+    'search search search';
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 12px;
+  padding: 12px 0;
+
+  @include up(md) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'logo search actions';
+    column-gap: 32px;
+    padding: 24px 0;
+  }
+}
+
+.logo {
+  grid-area: logo;
+  color: inherit;
+  text-decoration: none;
+}
+
+.search {
+  grid-area: search;
+  max-width: 760px;
+}
+
+.actionsArea {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  @include up(md) {
+    gap: 12px;
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.iconLink {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: inherit;
+  border-radius: 50%;
+  @include focus-ring;
+}
+
+.badge {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  min-width: 20px;
+  padding: 0 5px;
+  background: var(--color-red);
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+}
+
+.onlySmall {
+  @include up(sm) {
+    display: none;
+  }
+}
+
+.fromSm {
+  display: none;
+
+  @include up(sm) {
+    display: inline-flex;
+  }
+}
+
+.account {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 8px;
+  background: transparent;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  @include focus-ring;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  background: var(--color-yellow);
+  color: #000;
+  border-radius: 50%;
+  font-size: 1rem;
+  font-weight: 800;
+
+  // the initial comes from an attribute, not from text, so the button's visible text is just the name (WCAG 2.5.3 label in name)
+  &::before {
+    content: attr(data-initial);
+  }
+}
+
+.accountName {
+  display: none;
+  max-width: 140px;
+  @include truncate-lines(1);
+
+  @include up(md) {
+    display: inline;
+  }
+}
+
+.email {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  @include truncate-lines(1);
+}

@@ -1,0 +1,35 @@
+@use '../../../../styles/mixins' as *;
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.key {
+  min-width: 200px;
+  padding: 8px 12px;
+  background: var(--color-surface-input);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.selectable {
+  user-select: all;
+}
+
+.hidden {
+  user-select: none;
+}
+
+.status {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.failed {
+  color: #ff9db5;
+}

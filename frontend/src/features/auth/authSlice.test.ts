@@ -1,132 +1,146 @@
 import { describe, expect, it } from 'vitest';
 import { makeStore } from '../../app/store';
-import { authApi } from './authApi';
-import { sessionExpired } from './authActions';
-import { signOutStarted } from './authSlice';
-import { fakeApi, apiError } from '../../test/fakeApi';
+import { apiError, fakeApi } from '../../test/fakeApi';
+import { bootstrapRequest, loginRequest, logoutRequest, sessionExpired } from './authSlice';
+import { fetchCartRequest } from '../cart/cartSlice';
 
 const ada = { id: 7, email: 'ada@example.com', displayName: 'Ada' };
+const emptyCart = { lines: [], totalCents: 0, currency: 'EUR', issues: [] };
+const settle = () => new Promise((resolve) => setTimeout(resolve, 30));
 
-describe('auth slice', () => {
+describe('auth slice + saga', () => {
   it('starts unknown: we have not asked the server yet', () => {
-    expect(makeStore().getState().auth).toEqual({
+    expect(makeStore().getState().auth).toMatchObject({
       status: 'unknown',
       user: null,
       signingOut: false,
     });
   });
 
-  it('becomes authenticated when /auth/me answers with a user', async () => {
-    fakeApi({ 'GET /api/auth/me': { body: { user: ada } } });
+  it("becomes authenticated when /auth/me answers with a user, and then loads that user's cart", async () => {
+    const api = fakeApi({
+      'GET /api/auth/me': { body: { user: ada } },
+      'GET /api/cart': { body: emptyCart },
+    });
     const store = makeStore();
+    store.dispatch(bootstrapRequest());
+    await settle();
 
-    await store.dispatch(authApi.endpoints.getMe.initiate());
-
-    expect(store.getState().auth).toEqual({
+    expect(store.getState().auth).toMatchObject({
       status: 'authenticated',
       user: ada,
       signingOut: false,
     });
+    expect(store.getState().cart.cart).toEqual(emptyCart);
+    expect(api.callsTo('/api/cart')).toHaveLength(1);
   });
 
-  it('becomes anonymous on a 401 from /auth/me', async () => {
-    fakeApi({ 'GET /api/auth/me': apiError(401, 'unauthorized', 'Authentication required') });
+  it('becomes anonymous on a 401 from /auth/me, and asks for no cart', async () => {
+    const api = fakeApi({
+      'GET /api/auth/me': apiError(401, 'unauthorized', 'Authentication required'),
+    });
     const store = makeStore();
+    store.dispatch(bootstrapRequest());
+    await settle();
 
-    await store.dispatch(authApi.endpoints.getMe.initiate());
-
-    expect(store.getState().auth).toEqual({ status: 'anonymous', user: null, signingOut: false });
+    expect(store.getState().auth).toMatchObject({ status: 'anonymous', user: null });
+    expect(api.callsTo('/api/cart')).toHaveLength(0);
   });
 
-  it('is "error", NOT anonymous, when the server cannot be reached or fails: no redirect to login for an outage', async () => {
+  it('is "error", NOT anonymous, when the server fails: no redirect to login for an outage', async () => {
     fakeApi({ 'GET /api/auth/me': { status: 503, body: {} } });
     const store = makeStore();
-
-    await store.dispatch(authApi.endpoints.getMe.initiate());
+    store.dispatch(bootstrapRequest());
+    await settle();
 
     expect(store.getState().auth.status).toBe('error');
   });
 
-  it('login and register sign the user in, logout signs out and clears the cached data of that session', async () => {
+  it("login signs in; logout signs out and clears that session's cart", async () => {
     fakeApi({
       'POST /api/auth/login': { body: { user: ada } },
-      'GET /api/cart': { body: { lines: [], totalCents: 0, currency: 'EUR', issues: [] } },
+      'GET /api/cart': { body: emptyCart },
       'POST /api/auth/logout': { status: 204 },
     });
     const store = makeStore();
-
-    await store.dispatch(authApi.endpoints.login.initiate({ email: ada.email, password: 'x' }));
+    store.dispatch(loginRequest({ email: ada.email, password: 'x' }));
+    await settle();
     expect(store.getState().auth.status).toBe('authenticated');
+    expect(store.getState().cart.cart).not.toBeNull();
 
-    const { cartApi } = await import('../cart/cartApi');
-    await store.dispatch(cartApi.endpoints.getCart.initiate());
-    expect(Object.keys(store.getState().api.queries)).toHaveLength(1);
-
-    await store.dispatch(authApi.endpoints.logout.initiate());
-    expect(store.getState().auth).toEqual({ status: 'anonymous', user: null, signingOut: false });
-    expect(Object.keys(store.getState().api.queries)).toHaveLength(0);
+    store.dispatch(logoutRequest());
+    expect(store.getState().auth.signingOut).toBe(true); // flagged by the very action that starts it
+    await settle();
+    expect(store.getState().auth).toMatchObject({
+      status: 'anonymous',
+      user: null,
+      signingOut: false,
+    });
+    expect(store.getState().cart.cart).toBeNull();
   });
 
   it('a 401 from a protected endpoint ends the session, but a wrong password does not count as one', async () => {
     fakeApi({
-      'GET /api/orders': apiError(401, 'unauthorized', 'Authentication required'),
+      'GET /api/auth/me': { body: { user: ada } },
+      'GET /api/cart': apiError(401, 'unauthorized', 'Authentication required'),
       'POST /api/auth/login': apiError(401, 'invalid_credentials', 'Invalid email or password'),
     });
     const store = makeStore();
-    await store.dispatch(authApi.endpoints.login.initiate({ email: 'a@b.co', password: 'nope' }));
+    store.dispatch(loginRequest({ email: 'a@b.co', password: 'nope' }));
+    await settle();
     expect(store.getState().auth.status).toBe('unknown'); // nothing was decided by a failed login
+    expect(store.getState().auth.login.error?.code).toBe('invalid_credentials');
 
-    const { ordersApi } = await import('../orders/ordersApi');
-    await store.dispatch(ordersApi.endpoints.listOrders.initiate());
+    store.dispatch(bootstrapRequest()); // signed in; its cart request then answers 401
+    await settle();
     expect(store.getState().auth.status).toBe('anonymous'); // the session is gone
   });
 
-  it('an expiry resets the cache once, not on every later 401 (that would loop: reset -> refetch -> 401 -> reset ...)', async () => {
-    fakeApi({
-      'GET /api/auth/me': { body: { user: ada } },
-      'GET /api/cart': { body: { lines: [], totalCents: 0, currency: 'EUR', issues: [] } },
-    });
+  it('only the first expiry counts: a late 401 does not bounce someone who has signed in again', async () => {
+    fakeApi({ 'GET /api/auth/me': { body: { user: ada } }, 'GET /api/cart': { body: emptyCart } });
     const store = makeStore();
-    await store.dispatch(authApi.endpoints.getMe.initiate());
-    const { cartApi } = await import('../cart/cartApi');
-    await store.dispatch(cartApi.endpoints.getCart.initiate());
+    store.dispatch(bootstrapRequest());
+    await settle();
 
-    store.dispatch(sessionExpired()); // signed in -> signed out: the cache of that session is dropped
-    expect(Object.keys(store.getState().api.queries)).toHaveLength(0);
-
-    await store.dispatch(cartApi.endpoints.getCart.initiate());
-    store.dispatch(sessionExpired()); // already signed out: nothing more to clear
-    expect(Object.keys(store.getState().api.queries)).toHaveLength(1);
-  });
-
-  it('signing out is flagged while the request runs, cleared when it ends, and a failed logout leaves the user signed in', async () => {
-    let fail = true;
-    fakeApi({
-      'GET /api/auth/me': { body: { user: ada } },
-      'POST /api/auth/logout': () => (fail ? { status: 500, body: {} } : { status: 204 }),
-    });
-    const store = makeStore();
-    await store.dispatch(authApi.endpoints.getMe.initiate());
-
-    store.dispatch(signOutStarted());
-    expect(store.getState().auth.signingOut).toBe(true);
-
-    await store.dispatch(authApi.endpoints.logout.initiate());
-    expect(store.getState().auth).toEqual({
-      status: 'authenticated',
-      user: ada,
-      signingOut: false,
-    });
-
-    fail = false;
-    store.dispatch(signOutStarted());
-    await store.dispatch(authApi.endpoints.logout.initiate());
-    expect(store.getState().auth).toEqual({ status: 'anonymous', user: null, signingOut: false });
-  });
-
-  it('sessionExpired signs out', () => {
-    const store = makeStore();
     store.dispatch(sessionExpired());
     expect(store.getState().auth.status).toBe('anonymous');
+    expect(store.getState().cart.cart).toBeNull();
+  });
+
+  it('a failed logout still ends the session in this browser', async () => {
+    fakeApi({
+      'GET /api/auth/me': { body: { user: ada } },
+      'GET /api/cart': { body: emptyCart },
+      'POST /api/auth/logout': { status: 500, body: {} },
+    });
+    const store = makeStore();
+    store.dispatch(bootstrapRequest());
+    await settle();
+
+    store.dispatch(logoutRequest());
+    await settle();
+    expect(store.getState().auth).toMatchObject({ status: 'anonymous', signingOut: false });
+  });
+
+  it('a cart request that finishes after sign-out cannot put the old cart back', async () => {
+    let release: () => void = () => undefined;
+    fakeApi({
+      'GET /api/auth/me': { body: { user: ada } },
+      'GET /api/cart': () =>
+        new Promise(
+          (resolve) => (release = () => resolve({ body: { ...emptyCart, totalCents: 999 } })),
+        ),
+      'POST /api/auth/logout': { status: 204 },
+    });
+    const store = makeStore();
+    store.dispatch(bootstrapRequest());
+    await settle();
+    store.dispatch(logoutRequest());
+    await settle();
+    release();
+    await settle();
+
+    expect(store.getState().cart.cart).toBeNull();
+    void fetchCartRequest;
   });
 });

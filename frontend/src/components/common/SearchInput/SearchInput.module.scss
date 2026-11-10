@@ -1,0 +1,29 @@
+@use '../../../styles/mixins' as *;
+
+.wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.icon {
+  position: absolute;
+  left: 14px;
+  pointer-events: none;
+  color: var(--color-text-secondary);
+}
+
+.input {
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 14px 12px 46px;
+  background: var(--color-filter-input);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font-weight: 600;
+
+  &::placeholder {
+    color: var(--color-placeholder);
+    opacity: 1;
+  }
+}

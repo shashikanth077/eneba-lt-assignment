@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
-import { BannerCarousel } from './BannerCarousel';
-import { ProductRail } from './ProductRail';
-import type { BlockProps } from './types';
+import { BannerCarousel } from './components/HeroBanner';
+import { ProductRail } from './components/ProductRail';
+import type { BlockProps } from './homeTypes';
 
 /**
  * Which component draws which kind of block. The key is the block's `type` from the layout (home_blocks.type), NOT its name:

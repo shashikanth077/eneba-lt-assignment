@@ -1,0 +1,44 @@
+@use '../../../styles/mixins' as *;
+
+.region {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1400;
+  display: grid;
+  gap: 8px;
+  width: min(380px, calc(100vw - 32px));
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--color-footer);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-mint);
+  border-radius: var(--radius);
+}
+
+.error {
+  border-left-color: #ff6f9f;
+}
+.success {
+  border-left-color: var(--color-green);
+}
+
+.message {
+  flex: 1;
+}
+
+.close {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  @include focus-ring;
+}

@@ -15,7 +15,7 @@ Deliverables: GitHub link, public free-tier deployment URL, full AI chat log (do
 
 ## Stack
 - Backend: PHP 8.3, MySQL 8, REST (JSON). No heavy framework unless agreed; PDO prepared statements.
-- Frontend: React + TypeScript + Vite, Redux Toolkit with RTK Query, Material UI (themed to Eneba).
+- Frontend: React + TypeScript + Vite, Redux Toolkit + Redux Saga (all requests and side effects), Axios, React Router, React Hook Form + zod, SCSS modules styled to Eneba, Lucide icons. No TanStack/React Query, no MUI.
 - Payments: Stripe test mode only. Email: EmailJS.
 
 ## Folder layout
@@ -26,14 +26,14 @@ Deliverables: GitHub link, public free-tier deployment URL, full AI chat log (do
 - CLAUDE.md, README.md at the repo root
 
 ## Coding conventions
-- TypeScript strict; no `any`. Function components and hooks only. One RTK Query API slice per
-  backend resource; the frontend renders only what the API returns.
+- TypeScript strict; no `any`. Function components and hooks only. Feature folders own
+  their slice, saga, service and types; components never call the API (dispatch + selectors only); the frontend renders only what the API returns.
 - PHP: `declare(strict_types=1)`, PSR-12, typed properties and returns, PDO prepared statements
   only, thin controllers, logic in services, one JSON error shape `{ "error": { "code", "message", "details" } }` (`details` is `null` when empty).
 - Passwords hashed with `password_hash`; auth via token or session; never trust client prices
   (recompute totals server-side).
 - Secrets (Stripe, DB, EmailJS) live in `.env` files, never committed; keep `.env.example` current.
-- Styling through the MUI theme (colors, typography, spacing tokens); no scattered magic values.
+- Styling through SCSS modules and the tokens in `src/styles/variables.scss`; no scattered magic values.
 - Small focused files, descriptive names, comments only for the non-obvious "why".
 - No application code or dependencies beyond what the current task needs.
 

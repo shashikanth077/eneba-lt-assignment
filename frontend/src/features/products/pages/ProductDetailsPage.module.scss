@@ -1,0 +1,87 @@
+@use '../../../styles/mixins' as *;
+
+.page {
+  display: grid;
+  gap: 40px;
+}
+
+.top {
+  display: grid;
+  gap: 24px;
+  align-items: start;
+
+  @include up(md) {
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 32px;
+  }
+}
+
+.cover {
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 267 / 337;
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+
+  @include up(md) {
+    max-width: none;
+  }
+}
+
+.info {
+  display: grid;
+  gap: 16px;
+}
+
+.title {
+  font-size: 1.75rem;
+
+  @include up(md) {
+    font-size: 2.125rem;
+  }
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0 18px;
+  line-height: 36px;
+  border-radius: 18px;
+  font-weight: 700;
+}
+
+.platform {
+  background: var(--color-yellow);
+  color: #000;
+}
+.region {
+  background: var(--color-mint);
+  color: #000;
+}
+.genre {
+  border: 1px solid #fff;
+}
+
+.meta {
+  color: var(--color-text-secondary);
+}
+
+.soldOut {
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: var(--color-text-secondary);
+}
+
+.offersTitle {
+  margin-bottom: 16px;
+}
+
+.skeletonCover {
+  aspect-ratio: 267 / 337;
+  height: auto;
+}

@@ -1,4 +1,4 @@
-import type { Cart, CartLine, OrderDetail, OrderSummary } from '../api/types';
+import type { Cart, CartLine, OrderDetail, OrderSummary } from '../types/api.types';
 import { apiError, fakeApi, type FakeApi, type FakeResponse, type FakeRoutes } from './fakeApi';
 import { SIGNED_IN } from './shopBackend';
 

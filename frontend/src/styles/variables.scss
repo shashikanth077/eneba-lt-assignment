@@ -1,0 +1,36 @@
+// Design tokens (docs/DESIGN_TOKENS.md). Measured values come from the Eneba reference screenshots, the rest are estimates.
+// The same colours exist as CSS custom properties in global.scss so components can use var(--color-*); SCSS variables are for
+// compile-time things (breakpoints, math).
+
+$color-page: #4718ac;
+$color-nav-bar: #341282;
+$color-surface: #351183;
+$color-surface-inset: #2f0f73;
+$color-surface-input: #2a0e69;
+$color-filter-panel: #5825cc;
+$color-filter-input: #461ea3;
+$color-chip: #2c0e6c;
+$color-card: #1f0b4f;
+$color-footer: #150733;
+$color-yellow: #fad318;
+$color-blue: #4101ff;
+$color-green: #84e916;
+$color-mint: #63e3c1;
+$color-red: #d22252;
+$color-text: #ffffff;
+$color-text-secondary: #dcd8e6;
+$color-text-muted: #b3aac9;
+$color-placeholder: #c4aaf0; // lighter than the measured #ad8fe4: that one is 3.9:1 on the input fill, this is above 4.5:1
+$color-border: #3c2198;
+
+$layout-container-max: 1440px;
+$layout-header-height: 108px;
+$layout-filter-width: 264px;
+$layout-hero-height: 379px;
+
+$font-stack: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+
+$bp-sm: 600px;
+$bp-md: 900px;
+$bp-lg: 1200px;
+$bp-xl: 1536px;

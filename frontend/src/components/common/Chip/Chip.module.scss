@@ -1,0 +1,33 @@
+@use '../../../styles/mixins' as *;
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 8px 0 18px;
+  background: var(--color-chip);
+  border-radius: 18px;
+  font-weight: 600;
+}
+
+.plain {
+  padding-right: 18px;
+}
+
+.remove {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+}

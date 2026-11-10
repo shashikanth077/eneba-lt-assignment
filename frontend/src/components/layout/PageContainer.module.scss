@@ -1,0 +1,14 @@
+@use '../../styles/variables' as *;
+
+.container {
+  width: 100%;
+  max-width: $layout-container-max;
+  margin: 0 auto;
+  padding-left: 16px;
+  padding-right: 16px;
+
+  @media (min-width: 600px) {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}

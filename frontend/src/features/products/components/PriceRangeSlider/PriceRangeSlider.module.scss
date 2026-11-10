@@ -1,0 +1,76 @@
+@use '../../../../styles/mixins' as *;
+
+// Two native range inputs on top of each other: native keyboard handling and screen-reader support, with only the thumbs clickable.
+.wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.track {
+  position: relative;
+  height: 28px;
+}
+
+.rail,
+.selected {
+  position: absolute;
+  top: 50%;
+  height: 4px;
+  transform: translateY(-50%);
+  border-radius: 2px;
+}
+
+.rail {
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.selected {
+  background: var(--color-yellow);
+}
+
+.thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+  appearance: none;
+
+  &::-webkit-slider-runnable-track {
+    background: transparent;
+  }
+  &::-moz-range-track {
+    background: transparent;
+  }
+
+  &::-webkit-slider-thumb {
+    pointer-events: auto;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #000;
+    background: var(--color-yellow);
+    cursor: grab;
+  }
+  &::-moz-range-thumb {
+    pointer-events: auto;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #000;
+    background: var(--color-yellow);
+    cursor: grab;
+  }
+
+  @include focus-ring;
+}
+
+.values {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}

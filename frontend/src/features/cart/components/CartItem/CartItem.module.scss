@@ -1,0 +1,73 @@
+@use '../../../../styles/mixins' as *;
+
+.item {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: var(--color-surface-inset);
+  border-radius: var(--radius);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: center;
+
+  @include up(sm) {
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+  }
+}
+
+.name {
+  font-weight: 700;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.meta {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.qty {
+  min-width: 28px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.total {
+  min-width: 80px;
+  text-align: right;
+  font-weight: 800;
+}
