@@ -20,7 +20,7 @@ final class KeyCipher
     public static function fromBase64(string $base64Key): self
     {
         $key = base64_decode($base64Key, true);
-        if ($key === false || strlen($key) !== SODIUM_CRYPTO_SECRETBOX_KEYBYTES) {
+        if ($key === false || strlen($key) !== \SODIUM_CRYPTO_SECRETBOX_KEYBYTES) {
             throw new RuntimeException('KEY_ENCRYPTION_KEY must be base64 of exactly 32 bytes');
         }
 
@@ -29,7 +29,7 @@ final class KeyCipher
 
     public function encrypt(string $plain): string
     {
-        $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+        $nonce = random_bytes(\SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
 
         return base64_encode($nonce . sodium_crypto_secretbox($plain, $nonce, $this->key));
     }
@@ -37,12 +37,12 @@ final class KeyCipher
     public function decrypt(string $payload): string
     {
         $raw = base64_decode($payload, true);
-        if ($raw === false || strlen($raw) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES) {
+        if ($raw === false || strlen($raw) <= \SODIUM_CRYPTO_SECRETBOX_NONCEBYTES) {
             throw new RuntimeException('Malformed encrypted key');
         }
         $plain = sodium_crypto_secretbox_open(
-            substr($raw, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES),
-            substr($raw, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES),
+            substr($raw, \SODIUM_CRYPTO_SECRETBOX_NONCEBYTES),
+            substr($raw, 0, \SODIUM_CRYPTO_SECRETBOX_NONCEBYTES),
             $this->key,
         );
         if ($plain === false) {

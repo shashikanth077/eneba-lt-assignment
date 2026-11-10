@@ -63,7 +63,7 @@ final class Doctor
             strlen($jwt) >= 32
                 ? self::pass('JWT_SECRET', 'set (' . strlen($jwt) . ' characters)')
                 : self::fail('JWT_SECRET', "missing or shorter than 32 characters. Generate one: php -r \"echo bin2hex(random_bytes(32));\" and put it in backend/.env"),
-            $key !== false && strlen($key) === SODIUM_CRYPTO_SECRETBOX_KEYBYTES
+            $key !== false && strlen($key) === \SODIUM_CRYPTO_SECRETBOX_KEYBYTES
                 ? self::pass('KEY_ENCRYPTION_KEY', 'valid (32 bytes)')
                 : self::fail('KEY_ENCRYPTION_KEY', "missing or not base64 of exactly 32 bytes. Generate one: php -r \"echo base64_encode(random_bytes(32));\". Keep it: keys encrypted with another value cannot be decrypted."),
         ];
