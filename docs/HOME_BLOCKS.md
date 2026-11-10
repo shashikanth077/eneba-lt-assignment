@@ -70,3 +70,19 @@ A new block that reuses an existing `type` needs no frontend change at all; a ne
 Implemented as `blockRegistry.ts` (`hero` -> `BannerCarousel`, `carousel` -> `ProductRail`), with a per-block error boundary and skeleton. Verified in a browser by editing
 `home_blocks` and `banners` through SQL (`frontend/e2e/home.e2e.cjs`): reorder, disable (the page drops the block and its endpoint answers 404), a failing block, and a banner edit.
 While developing, set `CACHE_DRIVER=none` so block *data* edits are visible at once; the layout itself is never cached.
+
+
+## Sections added in P29
+
+| Row (`home_blocks.slug`) | `type` | Source | Notes |
+|---|---|---|---|
+| `categories` | `shortcuts` | `GET /api/home/categories`: "Games", every platform that has products, the 4 biggest genres (`config.genres`) | each item is `{id, label, to, icon}`; the browser maps the icon key to a picture |
+| `recently_viewed` | `recent` | none (`endpoint = ''`): the visitor's browser remembers the slugs (localStorage `keymart:recently-viewed:v1`, max 12) and the row asks `GET /api/products?slug[]=...` for them | a row without endpoint is kept by `HomeLayout` and drawn only in the browser; with no history the row is hidden |
+| `recommended` | `carousel` | `GET /api/home/recommended`: buyable products ordered by popularity per euro (popular AND good value) | the same list for every visitor; it is not personal (no per-visitor data is kept on the server) |
+| `upcoming` | `carousel` | `GET /api/home/upcoming`: buyable products whose `release_date` is in the future, soonest first; cards carry `releaseDate` | the demo data ages, so migration 009 and the seeder schedule a dozen products relative to today when none is upcoming |
+
+Order: banner, categories, recently viewed, recommended, best sellers, deals, new releases, upcoming. New API detail: `GET /api/products` accepts `slug[]` (validated, at most 20).
+
+## Language and currency (P29)
+
+The header button "English EU | EUR" opens "Update your settings". **Currency** (EUR default, USD, GBP, AED) changes how catalogue prices are shown (cards, buy box, price filter); the choice is kept in localStorage. The rates are **fixed demo reference rates** in `features/settings/currencies.ts`, not live exchange rates, and **money is always euros**: the cart, checkout, Stripe charge and orders stay in EUR and say so. **Language** lists English only: the interface has no translations or i18n layer yet, so offering other languages would be pretend; adding one means extracting every string and is a separate task.

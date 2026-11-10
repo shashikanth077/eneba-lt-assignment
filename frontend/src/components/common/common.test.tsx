@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { Button, Chip, Input, Menu, MenuItem, Modal, Pagination, PriceDisplay, Select } from '.';
+import { renderWithProviders } from '../../test/renderApp';
 
 describe('Modal', () => {
   function Harness() {
@@ -181,7 +182,7 @@ describe('Input, Select, Chip, Button, PriceDisplay', () => {
   });
 
   it('PriceDisplay formats cents, with the original price and discount when given', () => {
-    render(<PriceDisplay from cents={1999} originalCents={2999} discountPct={33} />);
+    renderWithProviders(<PriceDisplay from cents={1999} originalCents={2999} discountPct={33} />);
     expect(screen.getByText('From')).toBeInTheDocument();
     expect(screen.getByText(/19\.99/)).toBeInTheDocument();
     expect(screen.getByText(/29\.99/)).toBeInTheDocument();

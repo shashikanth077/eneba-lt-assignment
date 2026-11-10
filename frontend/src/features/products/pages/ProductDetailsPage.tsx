@@ -11,6 +11,7 @@ import { BuyBox } from '../components/BuyBox';
 import { OfferTable } from '../components/OfferTable';
 import { isBuyable } from '../offers';
 import { selectProductEntry } from '../productsSelectors';
+import { recordViewed } from '../../home/recentlyViewed';
 import { fetchProductRequest } from '../productsSlice';
 import styles from './ProductDetailsPage.module.scss';
 
@@ -29,6 +30,7 @@ function ProductSkeleton() {
 
 function ProductDetails({ data }: { data: ProductResponse }) {
   const { product, offers } = data;
+  useEffect(() => recordViewed(product.slug), [product.slug]); // feeds the homepage's "Recently viewed"
   const buyable = offers.filter(isBuyable);
   const cheapest =
     buyable.length > 0

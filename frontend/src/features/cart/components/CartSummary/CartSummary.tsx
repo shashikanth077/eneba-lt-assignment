@@ -4,6 +4,7 @@ import type { Cart } from '../../../../types/api.types';
 import { formatCurrency } from '../../../../utils/formatCurrency';
 import { selectIsAuthenticated } from '../../../auth/authSlice';
 import { loginUrl } from '../../../../utils/redirect';
+import { selectDisplayCurrency } from '../../../settings/settingsSlice';
 import { selectCartCount } from '../../cartSlice';
 import styles from './CartSummary.module.scss';
 
@@ -11,6 +12,7 @@ import styles from './CartSummary.module.scss';
 export function CartSummary({ cart }: { cart: Cart }) {
   const itemCount = useAppSelector(selectCartCount);
   const signedIn = useAppSelector(selectIsAuthenticated);
+  const displayCurrency = useAppSelector(selectDisplayCurrency);
   const blocked = cart.issues.length > 0;
   return (
     <section className={styles.summary} aria-labelledby="cart-summary-heading">
@@ -26,6 +28,11 @@ export function CartSummary({ cart }: { cart: Cart }) {
         </span>
       </div>
       <p className={styles.note}>Prices and stock are checked again by the server when you pay.</p>
+      {displayCurrency !== 'EUR' && (
+        <p className={styles.note}>
+          Cart and checkout amounts are in euros (EUR), the currency you are charged in.
+        </p>
+      )}
       {blocked && (
         <Alert severity="warning">
           Fix the items marked above (remove them or lower the quantity) to continue.

@@ -140,6 +140,16 @@ export interface BannerItem {
 /** GET /api/home/deals adds the crossed-out price to the usual card. */
 export interface HomeProduct extends ProductCard {
   originalPriceCents?: number;
+  /** Only the "Upcoming games" row: when the game comes out (YYYY-MM-DD). */
+  releaseDate?: string;
+}
+
+/** GET /api/home/categories: one shortcut of the strip under the banner. */
+export interface CategoryShortcut {
+  id: string;
+  label: string;
+  to: string;
+  icon: string;
 }
 
 // ---- cart ------------------------------------------------------------------------------------

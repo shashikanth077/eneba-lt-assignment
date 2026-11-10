@@ -1,0 +1,15 @@
+.form {
+  display: grid;
+  gap: 16px;
+}
+
+.note {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}

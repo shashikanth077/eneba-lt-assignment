@@ -1,0 +1,41 @@
+@use '../../../styles/mixins' as *;
+
+.strip {
+  display: flex;
+  gap: 8px;
+  padding: 8px 0;
+  overflow-x: auto;
+  list-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.item {
+  flex: none;
+}
+
+.link {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-width: 96px;
+  padding: 12px 8px;
+  color: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  @include focus-ring;
+
+  &:hover {
+    color: var(--color-yellow);
+  }
+
+  svg {
+    width: 36px;
+    height: 36px;
+  }
+}

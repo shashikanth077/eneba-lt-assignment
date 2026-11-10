@@ -1,7 +1,7 @@
 import { Button, PriceDisplay } from '../../../../components/common';
 import { describeApiError } from '../../../../services/api/apiErrorHandler';
 import type { Offer } from '../../../../types/api.types';
-import { formatCurrency } from '../../../../utils/formatCurrency';
+import { useFormatPrice } from '../../../settings/useFormatPrice';
 import { useAddOffer } from '../OfferTable/useAddOffer';
 import styles from './BuyBox.module.scss';
 
@@ -35,6 +35,7 @@ function BuyCheapest({
   productSlug: string;
 }) {
   const { add, pending, error, inCart } = useAddOffer(cheapest, productSlug);
+  const formatPrice = useFormatPrice();
   return (
     <aside className={styles.box} aria-label="Buy">
       <PriceDisplay
@@ -57,7 +58,7 @@ function BuyCheapest({
       {error && <p className={styles.error}>{describeApiError(error)}</p>}
       <p className={styles.offers}>
         {offerCount === 1 ? '1 offer' : `${offerCount} offers`} from{' '}
-        {formatCurrency(cheapest.priceCents)}
+        {formatPrice(cheapest.priceCents)}
       </p>
       <p className={styles.note}>
         Instant delivery: your key appears on the order page as soon as the payment is confirmed.

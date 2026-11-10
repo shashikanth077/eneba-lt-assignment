@@ -168,3 +168,28 @@
   color: var(--color-text-secondary);
   @include truncate-lines(1);
 }
+
+// language | currency (reference header); icon only on a phone, where the row is crowded
+.locale {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 8px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font-size: var(--font-size-nav);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  @include focus-ring;
+
+  &:hover {
+    color: var(--color-yellow);
+  }
+
+  @include up(lg) {
+    display: inline-flex;
+  }
+}

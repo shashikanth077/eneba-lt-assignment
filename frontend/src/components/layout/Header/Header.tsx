@@ -3,6 +3,7 @@ import { Logo } from '../Logo';
 import { PageContainer } from '../PageContainer';
 import { AccountMenu } from './AccountMenu';
 import { CartButton } from './CartButton';
+import { LocaleButton } from './LocaleButton';
 import { SearchBox } from './SearchBox';
 import styles from './Header.module.scss';
 
@@ -22,6 +23,7 @@ export function Header() {
             <SearchBox />
           </div>
           <div className={styles.actionsArea}>
+            <LocaleButton />
             <CartButton />
             <AccountMenu />
           </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDebounce } from '../../../../hooks/useDebounce';
-import { formatCurrency } from '../../../../utils/formatCurrency';
+import { useFormatPrice } from '../../../settings/useFormatPrice';
 import styles from './PriceRangeSlider.module.scss';
 
 /** How long the slider must rest before the address (and so the request) changes. */
@@ -21,6 +21,7 @@ const toEuros = (cents: number) => Math.round(cents / 100);
  * the address once. When the address changes by other means (Back, a chip's x, "Clear all") the slider follows it.
  */
 export function PriceRangeSlider({ boundsCents, valueCents, onCommit }: PriceRangeSliderProps) {
+  const formatPrice = useFormatPrice();
   const floor = Math.floor(boundsCents.min / 100);
   const ceil = Math.max(floor + 1, Math.ceil(boundsCents.max / 100));
   const fromAddress: [number, number] = [
@@ -63,7 +64,7 @@ export function PriceRangeSlider({ boundsCents, valueCents, onCommit }: PriceRan
           step={1}
           value={draft[0]}
           aria-label="Minimum price"
-          aria-valuetext={formatCurrency(draft[0] * 100)}
+          aria-valuetext={formatPrice(draft[0] * 100)}
           onChange={(event) => setDraft([Math.min(Number(event.target.value), draft[1]), draft[1]])}
         />
         <input
@@ -74,13 +75,13 @@ export function PriceRangeSlider({ boundsCents, valueCents, onCommit }: PriceRan
           step={1}
           value={draft[1]}
           aria-label="Maximum price"
-          aria-valuetext={formatCurrency(draft[1] * 100)}
+          aria-valuetext={formatPrice(draft[1] * 100)}
           onChange={(event) => setDraft([draft[0], Math.max(Number(event.target.value), draft[0])])}
         />
       </div>
       <div className={styles.values}>
-        <span data-testid="price-low">{formatCurrency(draft[0] * 100)}</span>
-        <span data-testid="price-high">{formatCurrency(draft[1] * 100)}</span>
+        <span data-testid="price-low">{formatPrice(draft[0] * 100)}</span>
+        <span data-testid="price-high">{formatPrice(draft[1] * 100)}</span>
       </div>
     </div>
   );

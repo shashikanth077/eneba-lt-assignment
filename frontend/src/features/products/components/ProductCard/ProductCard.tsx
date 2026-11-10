@@ -6,6 +6,16 @@ import { addToCartRequest, selectLineState } from '../../../cart/cartSlice';
 import type { ProductCardProps } from './ProductCard.types';
 import styles from './ProductCard.module.scss';
 
+const releaseFormat = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+const formatReleaseDate = (iso: string): string => {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? iso : releaseFormat.format(date);
+};
+
 /** The tile every list of games uses (homepage rails, store grid, search results). Pure view: no store, no requests. */
 export function ProductCard({ product }: ProductCardProps) {
   const dispatch = useAppDispatch();
@@ -58,6 +68,9 @@ export function ProductCard({ product }: ProductCardProps) {
         <span className={classNames(styles.region, region.slug === 'global' && styles.global)}>
           {region.name}
         </span>
+        {product.releaseDate && (
+          <span className={styles.releases}>Releases {formatReleaseDate(product.releaseDate)}</span>
+        )}
         <span className={styles.price}>
           {!inStock || fromPriceCents === null ? (
             <span className={styles.soldOut}>Out of stock</span>

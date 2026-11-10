@@ -1,4 +1,9 @@
-import type { BannerItem, HomeBlockMeta, HomeProduct } from '../../types/api.types';
+import type {
+  BannerItem,
+  CategoryShortcut,
+  HomeBlockMeta,
+  HomeProduct,
+} from '../../types/api.types';
 
 /**
  * Everything the homepage receives is data from the database, so it is checked before it is rendered: a bad row must make ONE block
@@ -96,4 +101,16 @@ export function parseProducts(data: unknown): HomeProduct[] {
 export function autoplayMsOf(config: Record<string, unknown>): number | null {
   const value = config.autoplayMs;
   return typeof value === 'number' && Number.isFinite(value) && value >= 2000 ? value : null;
+}
+
+export function parseCategories(data: unknown): CategoryShortcut[] {
+  return itemsOf(data).flatMap((item) =>
+    isRecord(item) &&
+    typeof item.id === 'string' &&
+    typeof item.label === 'string' &&
+    typeof item.icon === 'string' &&
+    isInternalPath(item.to)
+      ? [{ id: item.id, label: item.label, to: item.to, icon: item.icon }]
+      : [],
+  );
 }
