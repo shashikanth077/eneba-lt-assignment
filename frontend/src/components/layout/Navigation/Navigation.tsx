@@ -1,11 +1,11 @@
 import { LayoutGrid } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../app/hooks';
 import { fetchFacetsRequest } from '../../../features/products/productsSlice';
 import { selectFacetsEntry } from '../../../features/products/productsSelectors';
 import { classNames } from '../../../utils/classNames';
-import { Menu, MenuItem, Skeleton } from '../../common';
+import { Modal, Skeleton } from '../../common';
 import { PageContainer } from '../PageContainer';
 import styles from './Navigation.module.scss';
 
@@ -19,10 +19,13 @@ const SHORTCUTS = [
 /**
  * The bar under the header. Platforms and categories (genres) come from GET /api/filters, so they always match what the catalogue
  * really holds. If that request fails the bar still works with the fixed shortcuts. On a phone it scrolls sideways.
+ * "Categories" opens a side panel (a drawer) with the genres. It is NOT a dropdown inside the bar: the bar scrolls sideways
+ * (overflow), which clips anything positioned below it, and that is how the first version ended up as a tiny cut-off box.
  */
 export function Navigation() {
   const dispatch = useAppDispatch();
   const location = useLocation();
+  const [panelOpen, setPanelOpen] = useState(false);
   useEffect(() => {
     dispatch(fetchFacetsRequest('')); // the whole catalogue; shared with the store page's price bounds
   }, [dispatch]);
@@ -42,25 +45,16 @@ export function Navigation() {
     <nav className={styles.nav} aria-label="Categories and platforms">
       <PageContainer>
         <div className={styles.row}>
-          <Menu
-            align="left"
-            trigger={(props) => (
-              <button
-                type="button"
-                className={styles.categories}
-                disabled={!data || data.genres.length === 0}
-                {...props}
-              >
-                <LayoutGrid size={18} aria-hidden /> Categories
-              </button>
-            )}
+          <button
+            type="button"
+            className={styles.categories}
+            disabled={!data || data.genres.length === 0}
+            aria-haspopup="dialog"
+            aria-expanded={panelOpen}
+            onClick={() => setPanelOpen(true)}
           >
-            {(data?.genres ?? []).map((genre) => (
-              <MenuItem key={genre.value} to={`/store?genre=${encodeURIComponent(genre.value)}`}>
-                {genre.label}
-              </MenuItem>
-            ))}
-          </Menu>
+            <LayoutGrid size={18} aria-hidden /> Categories
+          </button>
           {links.map((link) => (
             <Link
               key={link.to}
@@ -78,6 +72,31 @@ export function Navigation() {
             : null}
         </div>
       </PageContainer>
+      <Modal
+        open={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        title="Categories"
+        variant="drawer"
+      >
+        <ul className={styles.panelList}>
+          <li>
+            <Link to="/store" className={styles.panelLink} onClick={() => setPanelOpen(false)}>
+              All games
+            </Link>
+          </li>
+          {(data?.genres ?? []).map((genre) => (
+            <li key={genre.value}>
+              <Link
+                to={`/store?genre=${encodeURIComponent(genre.value)}`}
+                className={styles.panelLink}
+                onClick={() => setPanelOpen(false)}
+              >
+                {genre.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </Modal>
     </nav>
   );
 }
