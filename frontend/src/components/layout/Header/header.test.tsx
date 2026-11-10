@@ -1,4 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { apiError, fakeApi } from '../../../test/fakeApi';
 import { renderApp } from '../../../test/renderApp';
@@ -96,6 +97,33 @@ describe('header and navigation', () => {
     await within(degraded).findByRole('link', { name: 'All games' });
     expect(within(degraded).getByRole('link', { name: 'New releases' })).toBeInTheDocument();
     expect(within(degraded).queryByRole('link', { name: 'Steam' })).not.toBeInTheDocument();
+  });
+
+  it('Categories opens a side panel with the genres, and choosing one goes to the store filtered by it', async () => {
+    fakeApi({
+      'GET /api/filters': { body: filters },
+      'GET /api/auth/me': apiError(401, 'unauthorized', 'x'),
+    });
+    const { router } = renderApp('/');
+    const nav = await screen.findByRole('navigation', { name: 'Categories and platforms' });
+    const button = await within(nav).findByRole('button', { name: 'Categories' });
+    await waitFor(() => expect(button).toBeEnabled());
+
+    await userEvent.setup().click(button);
+    const panel = await screen.findByRole('dialog', { name: 'Categories' });
+    expect(within(panel).getByRole('link', { name: 'All games' })).toHaveAttribute(
+      'href',
+      '/store',
+    );
+    await userEvent
+      .setup()
+      .click(within(panel).getByRole('link', { name: filters.genres[0].label }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/store'));
+    expect(router.state.location.search).toBe(
+      `?genre=${encodeURIComponent(filters.genres[0].value)}`,
+    );
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Categories' })).toBeNull());
   });
 
   it('the header, nav and footer are on every page, including unknown ones', async () => {

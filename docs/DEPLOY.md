@@ -113,8 +113,8 @@ mysql -h <host> -P <port> -u <user> -p --ssl-mode=VERIFY_CA --ssl-ca=ca.pem <dat
 | `DB_SSL_VERIFY` | `true` (default) | `false` only as a last resort: it encrypts but does not check who answers |
 | `STRIPE_SECRET_KEY` | `sk_test_...` | step 2 |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` | from step 6; checkout works without it but orders never become paid |
-| `RUN_MIGRATIONS` | `true` | apply new `database/migrations/*.sql` on every start (safe to repeat) |
-| `SEED_ON_START` | `if-empty` | load the demo catalogue, the game keys and the two demo accounts when no game key exists yet (so it also completes a database imported from `railway_import.sql`). `always` re-runs the (idempotent) seeder every start; `false` never |
+| `RUN_MIGRATIONS` | `true` (default, you can omit it) | apply new `database/migrations/*.sql` on every start (safe to repeat); `false` to opt out |
+| `SEED_ON_START` | `if-empty` (default, you can omit it) | create the demo catalogue and **game keys** when no game key exists yet. Without keys every game shows "Out of stock". `always` re-runs the idempotent seeder every start; `false` never |
 | `TRUST_PROXY` | `true` | the API sits behind proxies; the client address comes from `X-Forwarded-For` |
 | `TRUSTED_PROXY_HOPS` | `2` | Vercel + Render. If the address cannot be determined the limits fall back to one shared bucket (safe, never spoofable) |
 | `RATE_LIMIT_REGISTER_PER_HOUR` | `30` (optional) | default 10 per address; behind the proxies several visitors may share one, which matters when a reviewer registers a few accounts |

@@ -58,3 +58,26 @@
   flex: none;
   height: 28px;
 }
+
+.panelList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panelLink {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 4px;
+  color: inherit;
+  font-size: var(--font-size-nav);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  @include focus-ring;
+
+  &:hover {
+    color: var(--color-yellow);
+  }
+}
