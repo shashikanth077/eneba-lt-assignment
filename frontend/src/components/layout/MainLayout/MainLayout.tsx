@@ -17,6 +17,7 @@ export function MainLayout() {
   useBootstrapAuth(); // find out once whether the browser already has a session
   const { pathname } = useLocation();
   const checkout = CHECKOUT_PATHS.some((prefix) => pathname.startsWith(prefix));
+  const showVerificationBanner = !checkout && pathname !== '/verify-email';
 
   return (
     <div className={styles.shell}>
@@ -31,9 +32,9 @@ export function MainLayout() {
           <Navigation />
         </>
       )}
-      <main id="main" tabIndex={-1} className={styles.main}>
+      <main id="main" tabIndex={-1} className={`${styles.main} ${showVerificationBanner ? styles.withBanner : ''}`}>
         <PageContainer>
-          {!checkout && pathname !== '/verify-email' && <VerifyEmailBanner />}
+          {showVerificationBanner && <VerifyEmailBanner />}
           <Outlet />
         </PageContainer>
       </main>

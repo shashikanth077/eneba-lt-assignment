@@ -11,9 +11,7 @@
 
 .hero {
   @include full-bleed;
-  margin-top: calc(
-    -1 * var(--page-pad-y)
-  ); // the banner touches the category bar, as in the reference
+  margin-top: var(--hero-margin-top, calc(-1 * var(--page-pad-y))); // the banner touches the category bar when no notice is shown
   position: relative;
   height: 220px;
   overflow: hidden;
