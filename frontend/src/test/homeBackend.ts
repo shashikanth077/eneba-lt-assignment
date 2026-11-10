@@ -31,6 +31,7 @@ export const card = (id: number, name: string, over: Record<string, unknown> = {
   coverUrl: `/api/images/products/${id}.svg`,
   platform: { slug: 'steam', name: 'Steam' },
   region: { slug: 'global', name: 'Global' },
+  offerId: id,
   fromPriceCents: 1000 + id,
   offerCount: 2,
   inStock: true,

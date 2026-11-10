@@ -47,6 +47,8 @@ export interface ProductCard {
   coverUrl: string;
   platform: NamedRef;
   region: NamedRef;
+  /** The cheapest buyable offer, used by quick add-to-cart actions. */
+  offerId: number | null;
   /** null when the product is out of stock (only possible in search results) */
   fromPriceCents: number | null;
   offerCount: number;

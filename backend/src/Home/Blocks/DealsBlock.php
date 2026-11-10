@@ -49,12 +49,12 @@ final class DealsBlock implements HomeBlock
         $stmt = $this->pdo->prepare(
             'SELECT p.id, p.slug, p.name, pl.slug AS platform_slug, pl.name AS platform_name,
                     r.slug AS region_slug, r.name AS region_name,
-                    a.price_cents, a.offer_count, a.discount_pct, a.original_price_cents
+                    a.offer_id, a.price_cents, a.offer_count, a.discount_pct, a.original_price_cents
              FROM products p
              JOIN platforms pl ON pl.id = p.platform_id
              JOIN regions r ON r.id = p.region_id
              JOIN (
-                 SELECT o.product_id, o.price_cents, d.discount_pct, d.original_price_cents,
+                 SELECT o.id AS offer_id, o.product_id, o.price_cents, d.discount_pct, d.original_price_cents,
                         ROW_NUMBER() OVER (PARTITION BY o.product_id ORDER BY o.price_cents, o.id) AS rn,
                         COUNT(*) OVER (PARTITION BY o.product_id) AS offer_count
                  FROM offers o
@@ -88,6 +88,7 @@ final class DealsBlock implements HomeBlock
             'coverUrl' => '/api/images/products/' . $row['slug'] . '.svg',
             'platform' => ['slug' => $row['platform_slug'], 'name' => $row['platform_name']],
             'region' => ['slug' => $row['region_slug'], 'name' => $row['region_name']],
+            'offerId' => (int) $row['offer_id'],
             'fromPriceCents' => (int) $row['price_cents'],
             'offerCount' => (int) $row['offer_count'],
             'inStock' => true,

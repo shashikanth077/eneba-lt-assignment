@@ -28,6 +28,7 @@ export const productResponse = (
     coverUrl: `/api/images/products/${slug}.svg`,
     platform: { slug: 'steam', name: 'Steam' },
     region: { slug: 'global', name: 'Global' },
+    offerId: offers[0]?.id ?? null,
     fromPriceCents: offers.length ? Math.min(...offers.map((o) => o.priceCents)) : null,
     offerCount: offers.length,
     inStock: offers.length > 0,

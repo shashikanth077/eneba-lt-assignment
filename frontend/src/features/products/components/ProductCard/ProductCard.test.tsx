@@ -11,12 +11,12 @@ const show = (over: Record<string, unknown> = {}) =>
 describe('ProductCard (reference anatomy)', () => {
   it('shows the platform strip over the cover, then title, region and the From price', () => {
     show();
-    const link = screen.getByRole('link');
+    const link = screen.getByRole('link', { name: /Alpha Quest.*Global.*From/ });
     expect(link).toHaveAttribute('href', '/product/alpha-quest-steam-global');
-    expect(link).toHaveTextContent('Steam');
     expect(link).toHaveTextContent('Alpha Quest');
     expect(link).toHaveTextContent('Global');
     expect(link).toHaveTextContent('From');
+    expect(screen.getByText('Steam')).toBeInTheDocument();
   });
 
   it('the cover is decoration (empty alt) and lazy loaded', () => {

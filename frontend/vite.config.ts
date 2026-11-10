@@ -6,7 +6,7 @@ import react from '@vitejs/plugin-react';
 // In development this proxy plays the same role, which keeps cookies first-party.
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const target = env.VITE_API_PROXY_TARGET || 'http://localhost:8080';
+  const target = env.VITE_API_PROXY_TARGET || 'http://localhost:8000';
 
   return {
     plugins: [react()],

@@ -33,7 +33,7 @@ final class ProductRepository
         JOIN platforms pl ON pl.id = p.platform_id
         JOIN regions r ON r.id = p.region_id
         LEFT JOIN (
-            SELECT o.product_id, o.price_cents, d.discount_pct,
+            SELECT o.id AS offer_id, o.product_id, o.price_cents, d.discount_pct,
                    ROW_NUMBER() OVER (PARTITION BY o.product_id ORDER BY o.price_cents, o.id) AS rn,
                    COUNT(*) OVER (PARTITION BY o.product_id) AS offer_count
             FROM offers o
@@ -59,7 +59,7 @@ final class ProductRepository
         $order = $this->orderBy($filters, $sort, $params);
         $sql = 'SELECT p.id, p.slug, p.name, pl.slug AS platform_slug, pl.name AS platform_name,
                        r.slug AS region_slug, r.name AS region_name,
-                       a.price_cents AS from_price_cents, a.offer_count, a.discount_pct,
+                   a.offer_id, a.price_cents AS from_price_cents, a.offer_count, a.discount_pct,
                        (a.product_id IS NOT NULL) AS in_stock '
             . self::BASE_FROM
             . ' LEFT JOIN product_stats s ON s.product_id = p.id '
@@ -288,6 +288,7 @@ final class ProductRepository
     private static function castCardRow(array $row): array
     {
         $row['id'] = (int) $row['id'];
+        $row['offer_id'] = $row['offer_id'] === null ? null : (int) $row['offer_id'];
         $row['from_price_cents'] = $row['from_price_cents'] === null ? null : (int) $row['from_price_cents'];
         $row['offer_count'] = (int) $row['offer_count'];
         $row['in_stock'] = (bool) $row['in_stock'];

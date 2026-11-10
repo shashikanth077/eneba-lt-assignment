@@ -86,6 +86,7 @@ export const toCard = (game: Game) => ({
   coverUrl: `/api/images/products/game-${game.id}.svg`,
   platform: { slug: game.platform, name: cap(game.platform) },
   region: { slug: game.region, name: cap(game.region) },
+  offerId: game.id,
   fromPriceCents: game.priceCents,
   offerCount: 1,
   inStock: true,
