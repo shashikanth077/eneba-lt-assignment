@@ -117,3 +117,53 @@ jobs:
           name: playwright-traces
           path: frontend/test-results
           retention-days: 7
+
+  # Builds the production image and starts it like Render does (PORT from the platform, APP_ENV=production, migrate + seed on start),
+  # so a broken Dockerfile, start script or production config fails here and not on the first deploy (docs/DEPLOY.md).
+  image:
+    name: API Docker image (build, migrate, seed, serve)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: keymart
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -proot --silent"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t keymart-api backend
+      - name: Start it
+        run: |
+          docker run -d --name api --network host \
+            -e PORT=10000 -e APP_ENV=production -e APP_DEBUG=false -e COOKIE_SECURE=true \
+            -e APP_URL=https://keymart-demo.vercel.app \
+            -e JWT_SECRET="$(openssl rand -hex 32)" -e KEY_ENCRYPTION_KEY="$(openssl rand -base64 32)" \
+            -e DB_HOST=127.0.0.1 -e DB_PORT=3306 -e DB_NAME=keymart -e DB_USER=root -e DB_PASS=root \
+            -e RUN_MIGRATIONS=true -e SEED_ON_START=if-empty \
+            keymart-api
+      - name: Health, catalogue and demo sign-in
+        run: |
+          wait_for_health() {
+            for i in $(seq 1 60); do
+              curl -fsS http://127.0.0.1:10000/api/health && return 0
+              sleep 3
+            done
+            docker logs api
+            return 1
+          }
+          wait_for_health
+          curl -fsS "http://127.0.0.1:10000/api/products?pageSize=1" | jq -e '.items | length > 0'
+          curl -fsS -i -X POST http://127.0.0.1:10000/api/auth/login \
+            -H 'Content-Type: application/json' -H 'X-Requested-With: fetch' -H 'Origin: https://keymart-demo.vercel.app' \
+            -d '{"email":"demo.buyer@keymart.test","password":"Demo-Buyer-2027"}' | tee /tmp/login.txt
+          grep -i '^set-cookie: session=.*Secure' /tmp/login.txt
+      - name: A restart is safe (migrations and seed are skipped)
+        run: |
+          docker restart api
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:10000/api/health && break; sleep 3; done
+          docker logs api 2>&1 | grep -E "Nothing to migrate|seeding skipped"

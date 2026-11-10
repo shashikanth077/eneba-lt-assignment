@@ -48,6 +48,8 @@ php -S localhost:8080 -t public public/index.php
 cd frontend && cp .env.example .env && npm install && npm run dev
 ```
 
+Deploying (Vercel + Render + a free MySQL host): **docs/DEPLOY.md**.
+
 ## Demo accounts
 
 Created by `php bin/setup.php` / `php bin/seed.php` (already e-mail verified). Public on purpose: no money, no keys. Details in docs/EMAIL.md.

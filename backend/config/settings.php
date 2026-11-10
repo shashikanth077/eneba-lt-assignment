@@ -18,6 +18,11 @@ return static function (): array {
             'name' => $env('DB_NAME', 'keymart'),
             'user' => $env('DB_USER', 'keymart'),
             'pass' => $env('DB_PASS', ''),
+            // Managed MySQL hosts require TLS. DB_SSL=true turns it on and verifies the server certificate against DB_SSL_CA (a file path,
+            // for hosts with their own CA) or, when that is empty, the system's CA bundle. DB_SSL_VERIFY=false skips verification (weaker).
+            'ssl' => filter_var($env('DB_SSL', 'false'), FILTER_VALIDATE_BOOLEAN),
+            'ssl_ca' => $env('DB_SSL_CA'),
+            'ssl_verify' => filter_var($env('DB_SSL_VERIFY', 'true'), FILTER_VALIDATE_BOOLEAN),
             'lock_strategy' => $env('LOCK_STRATEGY', 'auto'), // auto | skip | wait (see App\Support\LockStrategy)
         ],
         // Only needed when the API is NOT at the root of its host, e.g. XAMPP's http://localhost/keymart/backend/public
