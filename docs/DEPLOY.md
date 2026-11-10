@@ -45,6 +45,8 @@ with `/api/(.*)` routed to the backend and everything else to the frontend, on *
 
 The rest of this file describes Option A (Vercel + Render) in detail; the database, Stripe, environment-variable and troubleshooting sections apply to both.
 
+> Using **Railway MySQL**? The database part (create, public TCP proxy, importing `backend/database/railway_import.sql`, variables) is in **docs/RAILWAY.md**.
+
 ## 0. Decide the names first (Option A) (the URLs depend on each other)
 
 The API needs the web address of the frontend, and the frontend's `vercel.json` needs the address of the API. Choose both names now:

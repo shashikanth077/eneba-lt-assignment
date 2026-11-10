@@ -51,6 +51,12 @@ jobs:
       - run: vendor/bin/phpunit --fail-on-skipped
         env:
           TEST_DB_NAME: keymart_test
+      - name: The Railway import file loads into an empty MySQL 8 and refuses a second import
+        run: |
+          mysql -h 127.0.0.1 -uroot -proot -e "CREATE DATABASE import_check CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+          mysql -h 127.0.0.1 -uroot -proot import_check < database/railway_import.sql
+          test "$(mysql -h 127.0.0.1 -uroot -proot -N import_check -e 'select count(*) from products')" = "120"
+          ! mysql -h 127.0.0.1 -uroot -proot import_check < database/railway_import.sql 2>/dev/null
 
   frontend:
     name: Frontend (lint, types, Vitest, build)
