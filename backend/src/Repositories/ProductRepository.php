@@ -228,6 +228,9 @@ final class ProductRepository
                 $in('p.id', $f->searchIds);
             }
         }
+        if ($f->slugs !== []) {
+            $in('p.slug', $f->slugs);
+        }
         if ($exclude !== 'platform' && $f->platforms !== []) {
             $in('pl.slug', $f->platforms);
         }

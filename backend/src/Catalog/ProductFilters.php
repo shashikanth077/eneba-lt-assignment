@@ -8,7 +8,8 @@ use App\Exceptions\ValidationException;
 
 /**
  * Validated catalog filters from the query string:
- *   platform[]=steam  region[]=europe  genre[]=RPG  price_min=500  price_max=2500   (prices in cents)
+ *   platform[]=steam  region[]=europe  genre[]=RPG  price_min=500  price_max=2500   (prices in cents)  slug[]=some-game (exactly these games,
+ *   used for "recently viewed")
  * A single value (platform=steam) is accepted too. Values are matched against slugs (genre: its name).
  */
 final class ProductFilters
@@ -30,13 +31,15 @@ final class ProductFilters
         public readonly ?int $priceMin = null,
         public readonly ?int $priceMax = null,
         public readonly ?array $searchIds = null,
+        /** @var list<string> only these products (by slug); empty = no restriction */
+        public readonly array $slugs = [],
     ) {
     }
 
     /** @param list<int> $rankedIds */
     public function withSearch(array $rankedIds): self
     {
-        return new self($this->platforms, $this->regions, $this->genres, $this->priceMin, $this->priceMax, array_values($rankedIds));
+        return new self($this->platforms, $this->regions, $this->genres, $this->priceMin, $this->priceMax, array_values($rankedIds), $this->slugs);
     }
 
     /** @param array<string, mixed> $query */
@@ -44,7 +47,7 @@ final class ProductFilters
     {
         $errors = [];
         $lists = [];
-        foreach (['platform' => 'platforms', 'region' => 'regions', 'genre' => 'genres'] as $param => $name) {
+        foreach (['platform' => 'platforms', 'region' => 'regions', 'genre' => 'genres', 'slug' => 'slugs'] as $param => $name) {
             $lists[$name] = self::list($query[$param] ?? [], $param, $errors);
         }
         $min = self::cents($query['price_min'] ?? null, 'price_min', $errors);
@@ -57,7 +60,7 @@ final class ProductFilters
             throw new ValidationException($errors);
         }
 
-        return new self($lists['platforms'], $lists['regions'], $lists['genres'], $min, $max);
+        return new self($lists['platforms'], $lists['regions'], $lists['genres'], $min, $max, null, $lists['slugs']);
     }
 
     /**
@@ -106,6 +109,6 @@ final class ProductFilters
     public function isEmpty(): bool
     {
         return $this->platforms === [] && $this->regions === [] && $this->genres === []
-            && $this->priceMin === null && $this->priceMax === null && $this->searchIds === null;
+            && $this->priceMin === null && $this->priceMax === null && $this->searchIds === null && $this->slugs === [];
     }
 }

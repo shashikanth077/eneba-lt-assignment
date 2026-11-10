@@ -32,25 +32,34 @@ final class HomeSeededTest extends DbTestCase
         foreach ($classes as $class) {
             $registered[$class::SLUG] = $class::PATH;
         }
-        $rows = self::$pdo->query('SELECT slug, endpoint FROM home_blocks')->fetchAll();
+        // "recently_viewed" has no endpoint on purpose: it is drawn from the visitor's own browser history
+        $rows = self::$pdo->query("SELECT slug, endpoint FROM home_blocks WHERE endpoint <> ''")->fetchAll();
 
-        self::assertCount(4, $rows);
+        self::assertCount(7, $rows);
         foreach ($rows as $row) {
             self::assertArrayHasKey($row['slug'], $registered, "seeded row '{$row['slug']}' has no backend block");
             self::assertSame($registered[$row['slug']], $row['endpoint'], "endpoint of '{$row['slug']}'");
         }
-        self::assertCount(4, $registered, 'and no registered block lacks a seeded row');
+        self::assertCount(7, $registered, 'and no registered block lacks a seeded row');
     }
 
     public function testSeededLayoutAndBlocksProduceRealContent(): void
     {
         $layout = $this->get('/api/home/layout')['blocks'];
-        self::assertSame(['banner', 'best_sellers', 'deals', 'new_releases'], array_column($layout, 'id'));
+        self::assertSame(
+            ['banner', 'categories', 'recently_viewed', 'recommended', 'best_sellers', 'deals', 'new_releases', 'upcoming'],
+            array_column($layout, 'id'),
+        );
 
         foreach ($layout as $block) {
+            if ($block['endpoint'] === '') {
+                continue; // drawn in the browser
+            }
             $items = $this->get($block['endpoint'])['items'];
             self::assertNotEmpty($items, $block['id'] . ' has content');
-            self::assertLessThanOrEqual($block['config']['limit'] ?? 4, count($items), $block['id'] . ' honours its limit');
+            if ($block['id'] !== 'categories') { // its config is a genre count, the strip also lists every platform
+                self::assertLessThanOrEqual($block['config']['limit'] ?? 4, count($items), $block['id'] . ' honours its limit');
+            }
         }
 
         $deals = $this->get('/api/home/deals')['items'];
@@ -104,7 +113,7 @@ final class HomeSeededTest extends DbTestCase
             }
         }, require __DIR__ . '/../config/home.php');
 
-        self::assertCount(4, $registry->routes());
+        self::assertCount(7, $registry->routes());
         self::assertTrue($registry->has('deals'));
         self::assertFalse($registry->has('nope'));
         self::assertSame('/api/home/deals', $registry->get('deals')->path());

@@ -52,7 +52,13 @@ export function ProductRail({ block }: BlockProps) {
   return <Rail title={block.title} products={products} />;
 }
 
-function Rail({ title, products }: { title: string; products: ReturnType<typeof parseProducts> }) {
+export function Rail({
+  title,
+  products,
+}: {
+  title: string;
+  products: ReturnType<typeof parseProducts>;
+}) {
   const headingId = useId();
   const rail = useRef<HTMLUListElement>(null);
   const scroll = (direction: 1 | -1) =>

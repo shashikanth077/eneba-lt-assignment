@@ -1,6 +1,8 @@
 import type { ComponentType } from 'react';
 import { BannerCarousel } from './components/HeroBanner';
+import { CategoryStrip } from './components/CategoryStrip';
 import { ProductRail } from './components/ProductRail';
+import { RecentlyViewed } from './components/RecentlyViewed';
 import type { BlockProps } from './homeTypes';
 
 /**
@@ -11,4 +13,6 @@ import type { BlockProps } from './homeTypes';
 export const blockRenderers: Record<string, ComponentType<BlockProps>> = {
   hero: BannerCarousel,
   carousel: ProductRail,
+  shortcuts: CategoryStrip,
+  recent: RecentlyViewed,
 };

@@ -1,1 +1,1 @@
-export { ProductRail, RailSkeleton } from './ProductRail';
+export { ProductRail, RailSkeleton, Rail } from './ProductRail';

@@ -1,6 +1,6 @@
 import { Button, Chip } from '../../../../components/common';
 import type { Filters } from '../../../../types/api.types';
-import { formatCurrency } from '../../../../utils/formatCurrency';
+import { useFormatPrice } from '../../../settings/useFormatPrice';
 import { cleared, hasActiveFilters, type StoreQuery } from '../../productsQuery';
 import styles from './ActiveFilters.module.scss';
 
@@ -14,13 +14,18 @@ interface ActiveFiltersProps {
 const labelOf = (options: Filters['platforms'] | undefined, value: string) =>
   options?.find((option) => option.value === value)?.label ?? value;
 
-function priceLabel(min: number | null, max: number | null): string {
-  if (min !== null && max !== null) return `${formatCurrency(min)} – ${formatCurrency(max)}`;
-  return min !== null ? `From ${formatCurrency(min)}` : `Up to ${formatCurrency(max ?? 0)}`;
+function priceLabel(
+  min: number | null,
+  max: number | null,
+  format: (cents: number) => string,
+): string {
+  if (min !== null && max !== null) return `${format(min)} – ${format(max)}`;
+  return min !== null ? `From ${format(min)}` : `Up to ${format(max ?? 0)}`;
 }
 
 /** One removable chip per active filter, plus "Clear all". Removing a chip changes the address like unticking the box would. */
 export function ActiveFilters({ query, labels, onChange }: ActiveFiltersProps) {
+  const formatPrice = useFormatPrice();
   if (!hasActiveFilters(query)) return null;
 
   const chips: { key: string; label: string; remove: () => void }[] = [
@@ -46,7 +51,7 @@ export function ActiveFilters({ query, labels, onChange }: ActiveFiltersProps) {
       ? [
           {
             key: 'price',
-            label: priceLabel(query.priceMin, query.priceMax),
+            label: priceLabel(query.priceMin, query.priceMax, formatPrice),
             remove: () => onChange({ priceMin: null, priceMax: null }),
           },
         ]
