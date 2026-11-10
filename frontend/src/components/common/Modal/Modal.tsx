@@ -8,11 +8,18 @@ interface ModalProps {
   open: boolean;
   onClose: () => void;
   title: string;
-  /** `drawer` slides in from the left at 90% width (the mobile filter panel); `center` is a plain dialog. */
-  variant?: 'center' | 'drawer';
+  /** `drawer` slides in from the left at 90% width (the mobile filter panel); `drawerRight` is the cart panel; `center` is a plain dialog. */
+  variant?: 'center' | 'drawer' | 'drawerRight';
   children: ReactNode;
   footer?: ReactNode;
 }
+
+const BACKDROP = { center: styles.center, drawer: styles.drawer, drawerRight: styles.drawerRight };
+const PANEL = {
+  center: styles.panelCenter,
+  drawer: styles.panelDrawer,
+  drawerRight: styles.panelDrawerRight,
+};
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea, [tabindex]:not([tabindex="-1"])';
@@ -63,7 +70,7 @@ export function Modal({ open, onClose, title, variant = 'center', children, foot
 
   return createPortal(
     <div
-      className={classNames(styles.backdrop, variant === 'drawer' ? styles.drawer : styles.center)}
+      className={classNames(styles.backdrop, BACKDROP[variant])}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -73,10 +80,7 @@ export function Modal({ open, onClose, title, variant = 'center', children, foot
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={classNames(
-          styles.panel,
-          variant === 'drawer' ? styles.panelDrawer : styles.panelCenter,
-        )}
+        className={classNames(styles.panel, PANEL[variant])}
         onKeyDown={onKeyDown}
       >
         <div className={styles.header}>

@@ -29,7 +29,9 @@
   object-fit: cover;
 }
 
+// above the cover link, below the buttons
 .strip {
+  pointer-events: none;
   position: absolute;
   left: 0;
   right: 0;
@@ -42,6 +44,12 @@
   font-size: var(--font-size-card-meta);
   font-weight: 700;
   color: var(--color-text-secondary);
+}
+
+// The whole cover is a link to the game (the buttons sit above it), so tapping or clicking the picture always goes somewhere.
+.coverLink {
+  position: absolute;
+  inset: 0;
 }
 
 .actions {
@@ -62,6 +70,14 @@
 .card:focus-within .actions {
   transform: translateY(0);
   opacity: 1;
+}
+
+// A touch screen has no hover: show the two buttons all the time.
+@media (hover: none) {
+  .actions {
+    transform: none;
+    opacity: 1;
+  }
 }
 
 .details,
