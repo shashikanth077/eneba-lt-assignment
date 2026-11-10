@@ -19,7 +19,8 @@ final class AuthController
         private readonly AuthService $auth,
         private readonly TokenService $tokens,
         private readonly SessionCookie $cookie,
-        private readonly bool $trustProxy,
+        /** how many proxies in front of the app we trust to append to X-Forwarded-For (0 = none), see ClientIp */
+        private readonly int $trustedProxies,
     ) {
     }
 
@@ -43,7 +44,7 @@ final class AuthController
             'password' => 'required|string|max:128',
         ]);
 
-        $user = $this->auth->login($data['email'], $data['password'], ClientIp::from($request, $this->trustProxy));
+        $user = $this->auth->login($data['email'], $data['password'], ClientIp::from($request, $this->trustedProxies));
 
         return $this->signedIn($response, $user, 200);
     }

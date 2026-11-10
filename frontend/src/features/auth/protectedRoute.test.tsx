@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { apiError, fakeApi } from '../../test/fakeApi';
 import { renderApp } from '../../test/renderApp';
+import { fetchCartRequest } from '../cart/cartSlice';
+import { fetchOrdersRequest } from '../orders/ordersSlice';
 
 const ada = { id: 7, email: 'ada@example.com', displayName: 'Ada Lovelace' };
 const orders = {
@@ -44,17 +46,17 @@ const signIn = async (password = 'correct horse 9') => {
 describe('ProtectedRoute: redirect to login, then back', () => {
   it('sends a signed-out visitor to /login with the page they wanted in ?next, and back after signing in', async () => {
     backendWithSession();
-    const { router } = renderApp('/account/orders');
+    const { router } = renderApp('/orders');
 
     await screen.findByRole('heading', { name: 'Sign in' });
     expect(router.state.location.pathname).toBe('/login');
-    expect(router.state.location.search).toBe('?next=%2Faccount%2Forders');
+    expect(router.state.location.search).toBe('?next=%2Forders');
 
     await signIn();
 
     await screen.findByText('Order #41');
-    expect(router.state.location.pathname).toBe('/account/orders');
-    expect(screen.getByRole('button', { name: 'Account menu' })).toHaveTextContent('Ada Lovelace');
+    expect(router.state.location.pathname).toBe('/orders');
+    expect(screen.getByRole('button', { name: /Account menu/ })).toHaveTextContent('Ada Lovelace');
   });
 
   it('keeps the query string of the page too (/store?x is public, but a protected page with a query comes back intact)', async () => {
@@ -79,11 +81,11 @@ describe('ProtectedRoute: redirect to login, then back', () => {
       'GET /api/orders': { body: orders },
       'GET /api/cart': { body: { lines: [], totalCents: 0, currency: 'EUR', issues: [] } },
     });
-    const { router } = renderApp('/account/orders');
+    const { router } = renderApp('/orders');
 
     await screen.findByText('Order #41');
 
-    expect(router.state.location.pathname).toBe('/account/orders');
+    expect(router.state.location.pathname).toBe('/orders');
     expect(router.state.historyAction).not.toBe('REPLACE'); // never passed through /login
   });
 
@@ -93,10 +95,10 @@ describe('ProtectedRoute: redirect to login, then back', () => {
       'GET /api/auth/me': () => new Promise(() => undefined) as never,
     });
     // a never-resolving answer: the route must stay in "checking" and must not decide anything
-    const { router } = renderApp('/account/orders');
+    const { router } = renderApp('/orders');
 
     await screen.findByText('Checking your session…');
-    expect(router.state.location.pathname).toBe('/account/orders');
+    expect(router.state.location.pathname).toBe('/orders');
   });
 
   it('does not treat a server outage as "signed out": it offers a retry instead of the login page', async () => {
@@ -107,10 +109,10 @@ describe('ProtectedRoute: redirect to login, then back', () => {
       'GET /api/orders': { body: orders },
       'GET /api/cart': { body: { lines: [], totalCents: 0, currency: 'EUR', issues: [] } },
     });
-    const { router } = renderApp('/account/orders');
+    const { router } = renderApp('/orders');
 
     await screen.findByText('We could not check your session');
-    expect(router.state.location.pathname).toBe('/account/orders');
+    expect(router.state.location.pathname).toBe('/orders');
 
     up = true;
     await userEvent.setup().click(screen.getByRole('button', { name: 'Try again' }));
@@ -128,31 +130,27 @@ describe('ProtectedRoute: redirect to login, then back', () => {
         signedIn ? { body: orders } : apiError(401, 'unauthorized', 'Authentication required'),
       'GET /api/cart': { body: { lines: [], totalCents: 0, currency: 'EUR', issues: [] } },
     });
-    const { router, store } = renderApp('/account/orders');
+    const { router, store } = renderApp('/orders');
     await screen.findByText('Order #41');
 
     signedIn = false; // the cookie expires; the next protected request answers 401
-    const { cartApi } = await import('../cart/cartApi');
-    await store.dispatch(cartApi.endpoints.getCart.initiate(undefined, { forceRefetch: true }));
-    const { ordersApi } = await import('../orders/ordersApi');
-    await store.dispatch(
-      ordersApi.endpoints.listOrders.initiate(undefined, { forceRefetch: true }),
-    );
+    store.dispatch(fetchCartRequest()); // a protected request answers 401: the session is gone
+    store.dispatch(fetchOrdersRequest('1', { force: true }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/login'));
-    expect(router.state.location.search).toBe('?next=%2Faccount%2Forders');
+    expect(router.state.location.search).toBe('?next=%2Forders');
   });
 
   it('shows the server message for a wrong password and stays on the login page with the target kept', async () => {
     backendWithSession();
-    const { router } = renderApp('/account/orders');
+    const { router } = renderApp('/orders');
     await screen.findByRole('heading', { name: 'Sign in' });
 
     await signIn('wrong password');
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Invalid email or password');
     expect(router.state.location.pathname + router.state.location.search).toBe(
-      '/login?next=%2Faccount%2Forders',
+      '/login?next=%2Forders',
     );
   });
 
@@ -208,10 +206,10 @@ describe('ProtectedRoute: redirect to login, then back', () => {
       'GET /api/orders': { body: orders },
       'GET /api/cart': { body: { lines: [], totalCents: 0, currency: 'EUR', issues: [] } },
     });
-    const { router } = renderApp('/login?next=%2Faccount%2Forders');
+    const { router } = renderApp('/login?next=%2Forders');
 
     await screen.findByText('Order #41');
-    expect(router.state.location.pathname).toBe('/account/orders');
+    expect(router.state.location.pathname).toBe('/orders');
   });
 
   it('signing out from a protected page ends on the home page, not on a login redirect', async () => {
@@ -227,11 +225,11 @@ describe('ProtectedRoute: redirect to login, then back', () => {
         return { status: 204 };
       },
     });
-    const { router } = renderApp('/account/orders');
+    const { router } = renderApp('/orders');
     await screen.findByText('Order #41');
     const user = userEvent.setup();
 
-    await user.click(screen.getByRole('button', { name: 'Account menu' }));
+    await user.click(screen.getByRole('button', { name: /Account menu/ }));
     await user.click(await screen.findByRole('menuitem', { name: 'Sign out' }));
 
     await waitFor(() => expect(screen.getByRole('banner')).toHaveTextContent('Sign in'));
@@ -240,7 +238,7 @@ describe('ProtectedRoute: redirect to login, then back', () => {
   });
 
   it('every protected route is guarded', async () => {
-    for (const path of ['/cart', '/checkout', '/account/orders']) {
+    for (const path of ['/cart', '/checkout', '/orders']) {
       backendWithSession();
       const { router, unmount } = renderApp(path);
       await screen.findByRole('heading', { name: 'Sign in' });

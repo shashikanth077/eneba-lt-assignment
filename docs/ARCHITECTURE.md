@@ -22,7 +22,7 @@ Where I disagree or tightened them, it is flagged with **CHALLENGE** and summari
 | Checkout, Stripe PaymentIntent + webhook, key delivery | **In** | The most valuable and riskiest flow; gets the most care and tests. |
 | Auth: register, login, logout, me, protected routes | **In** | Required; checkout and orders need identity. |
 | Order history with revealed keys | **In** | Required by the flow ("Order and key"). |
-| Eneba styling via a MUI theme (dark palette, typography, cards, buttons) | **In** | Required; centralised in one theme so it applies to every screen. |
+| Eneba styling via SCSS modules and design tokens (dark palette, typography, cards, buttons) | **In** | Required; centralised in one theme so it applies to every screen. |
 | Keys encrypted at rest (libsodium) | **In** | Small cost, large credibility: a DB dump should not leak sellable keys. |
 | Backend integration tests for allocation/concurrency | **In** | The one place where bugs lose money; worth the time. |
 | Seller dashboard / key upload | **Out** | Sellers and keys come from a seed script; the buyer side is what is judged. |
@@ -41,7 +41,7 @@ Where I disagree or tightened them, it is flagged with **CHALLENGE** and summari
 ```mermaid
 flowchart LR
   subgraph Browser
-    SPA[React + RTK Query + MUI]
+    SPA[React + Redux Saga + Axios + SCSS]
     EJS[EmailJS client SDK]
   end
   subgraph Vercel
@@ -122,7 +122,7 @@ offer are not listed but keep their page (`offers: []`, `fromPriceCents: null`).
 | GET | `/api/health` | - | - | `200 { status: "ok", db: "ok" }` |
 
 Status codes: `401` not signed in, `403` wrong owner (we use `404` to avoid leaking ids), `409` stock/state
-conflict, `422` validation, `429` rate limited (login/register/suggest).
+conflict, `422` validation, `429` rate limited (login, register, checkout, search/suggest; see docs/REVIEW.md S3, S4).
 
 ---
 
@@ -135,10 +135,10 @@ conflict, `422` validation, `429` rate limited (login/register/suggest).
   so XSS cannot steal it. The Vercel rewrite makes the API same-origin, so no third-party-cookie problem.
 - **CSRF:** `SameSite=Lax` plus a required custom header (`X-Requested-With`) on all non-GET requests and an
   `Origin` check in middleware. A cross-site form cannot set the header.
-- **Frontend:** the SPA cannot read the cookie, so it asks `GET /api/auth/me` on boot (RTK Query) and keeps
+- **Frontend:** the SPA cannot read the cookie, so it asks `GET /api/auth/me` on boot (a saga) and keeps
   the user in the store. Protected routes redirect to `/login?next=...`. UI guards are convenience only;
   the API enforces `U` on every protected route.
-- **Rate limiting (implemented):** failed logins are counted in `login_attempts` (sliding 15 min window): 5 per (IP + email) and 20 per IP, then `429 too_many_attempts` with `retryAfterSeconds`. Unknown emails are counted exactly like real ones, and unknown emails are verified against a dummy hash, so neither status, body nor timing reveals whether an account exists. Registration is not rate-limited yet (known gap).
+- **Rate limiting (implemented):** failed logins are counted in `login_attempts` (sliding 15 min window): 5 per (IP + email) and 20 per IP, then `429 too_many_attempts` with `retryAfterSeconds`. Unknown emails are counted exactly like real ones, and unknown emails are verified against a dummy hash, so neither status, body nor timing reveals whether an account exists. Registration is limited per address (P15, docs/REVIEW.md S3); the login counters are claimed before the password check so a parallel burst cannot exceed the limit (S4); the client address is read from the right-hand side of `X-Forwarded-For` (S1).
 - **Revocation (implemented):** logout bumps `users.token_version`, so the old JWT is dead server-side. Trade-off: this also signs the user out on their other devices.
 - **Registration vs enumeration:** `register` answers `409 email_taken`, which does reveal that an email exists. That is the usual trade-off for a clear sign-up UX; login never reveals it.
 - **EmailJS:** runs in the browser with a public key, so anything sent through it is public in effect.

@@ -1,0 +1,26 @@
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.group {
+  display: grid;
+  gap: 8px;
+}
+
+.legend {
+  margin-bottom: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.options {
+  display: grid;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.skeleton {
+  height: 96px;
+}

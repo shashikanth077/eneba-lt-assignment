@@ -1,60 +1,106 @@
-import { createSlice } from '@reduxjs/toolkit';
-import type { User } from '../../api/types';
-import { getStatus } from '../../api/errors';
-import { authApi } from './authApi';
-import { sessionExpired } from './authActions';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import type { RootState } from '../../app/store';
+import type { User } from '../../types/api.types';
+import type { SerializedApiError } from '../../types/common.types';
+import type { AuthState, Credentials, RegistrationData } from './authTypes';
 
-/**
- * unknown        we have not asked the server yet (first load): ProtectedRoute waits instead of redirecting
- * authenticated  GET /auth/me (or a login/register) answered with a user
- * anonymous      the server said 401: no (valid) session
- * error          we could not find out (network down, 5xx): not the same as "signed out", so no redirect to login
- */
-export type AuthStatus = 'unknown' | 'authenticated' | 'anonymous' | 'error';
-
-export interface AuthState {
-  status: AuthStatus;
-  user: User | null;
-  /**
-   * The user pressed "Sign out" and the request is in flight. While true, a protected page must neither redirect to the login
-   * page (that is for visitors who are NOT signed in) nor keep showing the account: the menu is taking the user home.
-   * This is plain state set before anything else happens, so it does not depend on how React orders its renders.
-   */
-  signingOut: boolean;
-}
-
-const initialState: AuthState = { status: 'unknown', user: null, signingOut: false };
-
-const signedIn = (_: AuthState, action: { payload: { user: User } }): AuthState => ({
-  status: 'authenticated',
-  user: action.payload.user,
+const initialState: AuthState = {
+  status: 'unknown',
+  user: null,
   signingOut: false,
-});
-const signedOut = (): AuthState => ({ status: 'anonymous', user: null, signingOut: false });
+  login: { loading: false, error: null },
+  register: { loading: false, error: null },
+};
 
-export const authSlice = createSlice({
+const signedIn = (state: AuthState, user: User): void => {
+  state.status = 'authenticated';
+  state.user = user;
+  state.signingOut = false;
+};
+
+const signedOutState = (state: AuthState): void => {
+  state.status = 'anonymous';
+  state.user = null;
+  state.signingOut = false;
+};
+
+const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    signOutStarted: (state) => {
+    // "Who am I?" on first load
+    bootstrapRequest: () => undefined,
+    bootstrapSuccess: (state, action: PayloadAction<User>) => signedIn(state, action.payload),
+    bootstrapAnonymous: signedOutState,
+    bootstrapFailure: (state) => {
+      state.status = 'error';
+    },
+
+    loginRequest: {
+      reducer: (state) => {
+        state.login = { loading: true, error: null };
+      },
+      prepare: (credentials: Credentials) => ({ payload: credentials }),
+    },
+    loginSuccess: (state, action: PayloadAction<User>) => {
+      signedIn(state, action.payload);
+      state.login = { loading: false, error: null };
+    },
+    loginFailure: (state, action: PayloadAction<SerializedApiError>) => {
+      state.login = { loading: false, error: action.payload };
+    },
+
+    registerRequest: {
+      reducer: (state) => {
+        state.register = { loading: true, error: null };
+      },
+      prepare: (data: RegistrationData) => ({ payload: data }),
+    },
+    registerSuccess: (state, action: PayloadAction<User>) => {
+      signedIn(state, action.payload);
+      state.register = { loading: false, error: null };
+    },
+    registerFailure: (state, action: PayloadAction<SerializedApiError>) => {
+      state.register = { loading: false, error: action.payload };
+    },
+
+    /** Starts a sign-out. The flag is set by this very action, before the router has moved anywhere. */
+    logoutRequest: (state) => {
       state.signingOut = true;
     },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(sessionExpired, signedOut)
-      .addMatcher(authApi.endpoints.getMe.matchFulfilled, signedIn)
-      .addMatcher(authApi.endpoints.login.matchFulfilled, signedIn)
-      .addMatcher(authApi.endpoints.register.matchFulfilled, signedIn)
-      .addMatcher(authApi.endpoints.logout.matchFulfilled, signedOut)
-      .addMatcher(authApi.endpoints.logout.matchRejected, (state) => {
-        state.signingOut = false; // the server did not confirm: the user is still signed in
-      })
-      .addMatcher(authApi.endpoints.getMe.matchRejected, (state, action) =>
-        getStatus(action.payload) === 401 ? signedOut() : { ...state, status: 'error' as const },
-      );
+    /** The server ended the session (or the sign-out request finished, whatever it answered). */
+    signedOut: signedOutState,
+    /** Any request answered 401 although we thought we were signed in: the cookie expired or was revoked. */
+    sessionExpired: signedOutState,
+
+    clearAuthErrors: (state) => {
+      state.login.error = null;
+      state.register.error = null;
+    },
   },
 });
 
+export const {
+  bootstrapRequest,
+  bootstrapSuccess,
+  bootstrapAnonymous,
+  bootstrapFailure,
+  loginRequest,
+  loginSuccess,
+  loginFailure,
+  registerRequest,
+  registerSuccess,
+  registerFailure,
+  logoutRequest,
+  signedOut,
+  sessionExpired,
+  clearAuthErrors,
+} = authSlice.actions;
 export const authReducer = authSlice.reducer;
-export const { signOutStarted } = authSlice.actions;
+
+export const selectAuth = (state: RootState): AuthState => state.auth;
+export const selectAuthStatus = (state: RootState) => state.auth.status;
+export const selectUser = (state: RootState): User | null => state.auth.user;
+export const selectIsAuthenticated = (state: RootState): boolean =>
+  state.auth.status === 'authenticated';
+export const selectSigningOut = (state: RootState): boolean => state.auth.signingOut;

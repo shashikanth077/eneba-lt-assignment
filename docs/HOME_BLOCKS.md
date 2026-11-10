@@ -62,7 +62,7 @@ That is all: the route is registered from the class constant, and the layout pic
 The page asks `GET /api/home/layout` once, then renders each block with a renderer chosen by `type`:
 ```ts
 const renderers: Record<string, ComponentType<{ block: HomeBlockMeta }>> = { hero: HeroBlock, carousel: ProductCarousel };
-// each renderer fetches block.endpoint itself (one RTK Query endpoint taking a URL), so it has its own loading/error state
+// each renderer fetches block.endpoint itself (one saga-backed request per endpoint, keyed by the URL), so it has its own loading/error state
 blocks.map((b) => { const R = renderers[b.type]; return R ? <R key={b.id} block={b} /> : null; });  // unknown type: skipped, never a crash
 ```
 A new block that reuses an existing `type` needs no frontend change at all; a new `type` needs one renderer registered in that map, and no new route.

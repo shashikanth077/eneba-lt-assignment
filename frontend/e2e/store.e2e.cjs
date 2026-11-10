@@ -23,7 +23,7 @@ async function snapshot(page) {
       (i) => i.closest('label')?.textContent,
     ),
     search: document.querySelector('main input[type=search]')?.value,
-    sort: document.querySelector('main [role=combobox]')?.textContent,
+    sort: document.querySelector('main select')?.selectedOptions[0]?.textContent,
     price: [...document.querySelectorAll('input[type=range]')].map((i) => i.value),
     chips: [
       ...document.querySelectorAll('section[aria-label="Active filters"] .MuiChip-label'),
@@ -120,8 +120,9 @@ async function snapshot(page) {
     xbox.games.length > 0 && xbox.games.length < plain.games.length,
     'ticking Xbox narrows the grid',
   );
-  await page.getByRole('combobox', { name: 'Sort by' }).click();
-  await page.getByRole('option', { name: 'Price: high to low' }).click();
+  await page
+    .getByRole('combobox', { name: 'Sort by' })
+    .selectOption({ label: 'Price: high to low' });
   await page.waitForURL('**/store?platform=xbox&sort=price_desc');
   await page.goBack();
   await page.waitForURL('**/store?platform=xbox');

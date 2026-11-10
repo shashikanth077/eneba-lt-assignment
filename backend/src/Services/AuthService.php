@@ -40,14 +40,13 @@ final class AuthService
     {
         $email = self::normalizeEmail($email);
         $emailHash = LoginThrottle::emailHash($email);
-        $this->throttle->assertAllowed($ip, $emailHash);
+        $this->throttle->claimAttempt($ip, $emailHash); // counted before the password is looked at (see LoginThrottle)
 
         $user = $this->users->findByEmail($email);
         // Verify against a dummy hash when the user is unknown so response time does not reveal it.
         $valid = password_verify($password, $user['password_hash'] ?? self::dummyHash());
 
         if ($user === null || !$valid) {
-            $this->throttle->recordFailure($ip, $emailHash);
             throw new ApiException(401, 'invalid_credentials', 'Invalid email or password');
         }
 

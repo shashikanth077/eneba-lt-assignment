@@ -1,0 +1,27 @@
+.summary {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+}
+
+.heading {
+  font-size: 1.125rem;
+}
+
+.totalRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.total {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.note {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}

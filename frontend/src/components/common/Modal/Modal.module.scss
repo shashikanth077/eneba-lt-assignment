@@ -1,0 +1,68 @@
+@use '../../../styles/mixins' as *;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: rgba(10, 4, 30, 0.7);
+  display: flex;
+}
+
+.center {
+  align-items: center;
+  justify-content: center;
+}
+
+.drawer {
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.panel {
+  background: var(--color-surface);
+  color: var(--color-text);
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+}
+
+.panelCenter {
+  width: min(520px, 92vw);
+  padding: 24px;
+  border-radius: var(--radius);
+}
+
+.panelDrawer {
+  width: min(340px, 90vw);
+  padding: 16px;
+  background: var(--color-filter-panel);
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.title {
+  font-size: 1.25rem;
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  @include focus-ring;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}

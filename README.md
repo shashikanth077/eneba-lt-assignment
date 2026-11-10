@@ -11,7 +11,7 @@ digital key delivery, and authentication. "KEYMART" is a placeholder brand name.
 - **AI usage for review:** full chat history (all prompts and replies) in [docs/CHAT_HISTORY.md](docs/CHAT_HISTORY.md); per-task prompt + summary in [docs/ai-log/](docs/ai-log/)
 
 ## Stack
-PHP 8.3 + Slim 4 + PHP-DI + PDO, MySQL 8 · React + TypeScript + Vite, Redux Toolkit (RTK Query), MUI.
+PHP 8.3 + Slim 4 + PHP-DI + PDO, MySQL 8 · React + TypeScript + Vite, Redux Toolkit + Redux Saga, Axios, React Hook Form + zod, SCSS modules.
 
 ## Layout
 ```

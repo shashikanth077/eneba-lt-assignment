@@ -27,7 +27,8 @@ return static function (): array {
             'jwt_secret' => $env('JWT_SECRET'),
             'ttl_seconds' => (int) $env('JWT_TTL_SECONDS', '86400'),
             'cookie_secure' => filter_var($env('COOKIE_SECURE', 'true'), FILTER_VALIDATE_BOOLEAN),
-            'trust_proxy' => filter_var($env('TRUST_PROXY', 'false'), FILTER_VALIDATE_BOOLEAN),
+            // TRUST_PROXY=true means "we run behind TRUSTED_PROXY_HOPS proxies" (Render: 1). 0 = ignore X-Forwarded-For entirely.
+            'trusted_proxies' => filter_var($env('TRUST_PROXY', 'false'), FILTER_VALIDATE_BOOLEAN) ? max(1, (int) $env('TRUSTED_PROXY_HOPS', '1')) : 0,
             'login_max_per_email' => (int) $env('LOGIN_MAX_FAILURES_PER_EMAIL', '5'),
             'login_max_per_ip' => (int) $env('LOGIN_MAX_FAILURES_PER_IP', '20'),
             'login_window_seconds' => (int) $env('LOGIN_WINDOW_SECONDS', '900'),
@@ -40,6 +41,13 @@ return static function (): array {
         'checkout' => [
             'currency' => strtolower($env('CHECKOUT_CURRENCY', 'eur')),
             'reservation_minutes' => (int) $env('RESERVATION_MINUTES', '15'),
+        ],
+        // Abuse limits (App\Support\RateLimiter): requests allowed per window and subject. 0 disables one limit.
+        'rate_limits' => [
+            'enabled' => filter_var($env('RATE_LIMITS_ENABLED', 'true'), FILTER_VALIDATE_BOOLEAN),
+            'register_per_hour_per_ip' => (int) $env('RATE_LIMIT_REGISTER_PER_HOUR', '10'),
+            'checkout_per_10min_per_user' => (int) $env('RATE_LIMIT_CHECKOUT_PER_10MIN', '10'),
+            'search_per_minute_per_ip' => (int) $env('RATE_LIMIT_SEARCH_PER_MINUTE', '240'),
         ],
         'cache' => [
             'driver' => $env('CACHE_DRIVER', 'file'), // file | none

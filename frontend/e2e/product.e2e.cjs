@@ -1,6 +1,7 @@
 /**
  * Browser check of /search and /product/:slug against the real API and database.
  *   cd frontend && SQL_CMD="mariadb --socket=/run/mysqld/mysqld.sock keymart" NODE_PATH=$(npm root -g) node e2e/product.e2e.cjs
+ * (The API's registration limit is 10/hour per address: start it with RATE_LIMITS_ENABLED=false when you run these repeatedly.)
  * SQL_CMD runs a statement given with -e (used to make a game have one offer / none, and to undo it). Env: BASE_URL, SHOTS.
  */
 const { chromium } = require('playwright');
@@ -95,7 +96,7 @@ const sql = (statement) => execSync(`${SQL} -N -e "${statement}"`, { encoding: '
 
     // 3. Signed out: add to cart goes to sign in and comes back.
     await page
-      .getByRole('button', { name: /Add .* offer to cart/ })
+      .getByRole('button', { name: /Add to cart, offer from/ })
       .first()
       .click();
     await page.waitForURL(/\/login\?next=/);
@@ -122,9 +123,9 @@ const sql = (statement) => execSync(`${SQL} -N -e "${statement}"`, { encoding: '
       els.map((e) => e.childNodes[0].textContent.trim()),
     );
     const [a, b] = sellers;
-    await page.getByRole('button', { name: `Add ${a}'s offer to cart` }).click();
+    await page.getByRole('button', { name: `Add to cart, offer from ${a}` }).click();
     await page.getByRole('banner').getByRole('link', { name: 'Cart, 1 items' }).waitFor();
-    await page.getByRole('button', { name: `Add ${b}'s offer to cart` }).click();
+    await page.getByRole('button', { name: `Add to cart, offer from ${b}` }).click();
     await page.getByRole('banner').getByRole('link', { name: 'Cart, 2 items' }).waitFor();
     check(true, `adding offers from ${a} and ${b} updates the cart badge to 2`);
     check(

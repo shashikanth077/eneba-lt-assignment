@@ -1,0 +1,19 @@
+.panel {
+  display: grid;
+  gap: 16px;
+}
+
+.form {
+  display: grid;
+  gap: 16px;
+}
+
+.note {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.reserved {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}

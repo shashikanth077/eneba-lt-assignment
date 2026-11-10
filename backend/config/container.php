@@ -26,6 +26,7 @@ use App\Services\AuthService;
 use App\Services\LoginThrottle;
 use App\Support\Database;
 use App\Support\KeyCipher;
+use App\Support\RateLimiter;
 use DI\ContainerBuilder;
 use Psr\Container\ContainerInterface;
 
@@ -54,6 +55,7 @@ return static function (array $settings, array $overrides = []): ContainerInterf
             $auth['login_max_per_ip'],
             $auth['login_window_seconds'],
         ),
+        RateLimiter::class => static fn (ContainerInterface $c): RateLimiter => new RateLimiter($c->get(PDO::class), $settings['rate_limits']['enabled']),
         KeyRepository::class => static fn (ContainerInterface $c): KeyRepository => new KeyRepository($c->get(PDO::class), $settings['db']['lock_strategy']),
         CacheFactory::class => static fn (): CacheFactory => new CacheFactory($settings['cache']['driver'], $settings['cache']['dir']),
         HomeBlockRegistry::class => static fn (ContainerInterface $c): HomeBlockRegistry => new HomeBlockRegistry($c, require __DIR__ . '/home.php'),
@@ -80,7 +82,7 @@ return static function (array $settings, array $overrides = []): ContainerInterf
             $c->get(AuthService::class),
             $c->get(TokenService::class),
             $c->get(SessionCookie::class),
-            $auth['trust_proxy'],
+            $auth['trusted_proxies'],
         ),
     ]);
     $builder->addDefinitions($overrides);

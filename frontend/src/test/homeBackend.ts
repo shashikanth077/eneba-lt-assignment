@@ -1,4 +1,4 @@
-import type { HomeBlockMeta } from '../api/types';
+import type { HomeBlockMeta } from '../types/api.types';
 import { apiError, fakeApi, type FakeApi, type FakeRoutes } from './fakeApi';
 
 export const block = (

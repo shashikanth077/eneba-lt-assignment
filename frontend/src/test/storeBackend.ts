@@ -1,4 +1,4 @@
-import type { FacetOption, Filters } from '../api/types';
+import type { FacetOption, Filters } from '../types/api.types';
 import { apiError, fakeApi, type FakeApi, type FakeRoutes } from './fakeApi';
 
 const PLATFORMS = ['steam', 'xbox', 'playstation'] as const;

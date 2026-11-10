@@ -1,7 +1,7 @@
 # Design tokens (Eneba style)
 
 Source: the 5 screenshots you attached (homepage top, product cards, footer, catalog with filters, cart),
-taken from eneba.com/lt at a ~1893 px wide viewport. Code mirror: `frontend/src/theme/theme.ts`.
+taken from eneba.com/lt at a ~1893 px wide viewport. Code mirror: `frontend/src/styles/variables.scss` (+ CSS custom properties in `global.scss`).
 
 **How values were obtained.** *Measured* = pixel-sampled / edge-detected from the screenshots with a script
 (colours are exact to about +-1 because the images are compressed). *Estimated* = judged by eye, or
@@ -9,7 +9,7 @@ a free substitute because the original asset is not in the screenshots. I could 
 this environment, so nothing is from the site's CSS; **verify estimated rows in browser dev tools** before
 final polish.
 
-The reference is **dark / purple**, so the MUI theme is `mode: 'dark'`. Depth is created with colour steps;
+The reference is **dark / purple**, so the app is built on a dark purple page colour. Depth is created with colour steps;
 **no box shadows are visible anywhere**.
 
 ## 1. Colour

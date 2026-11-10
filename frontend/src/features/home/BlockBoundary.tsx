@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from 'react';
-import { ErrorState } from '../../components/state/ErrorState';
+import { ErrorMessage } from '../../components/feedback/ErrorMessage';
 
 interface Props {
   title: string;
@@ -24,7 +24,7 @@ export class BlockBoundary extends Component<Props, { failed: boolean }> {
   render() {
     if (this.state.failed) {
       return (
-        <ErrorState
+        <ErrorMessage
           title={`${this.props.title} could not be shown`}
           minHeight={160}
           onRetry={() => this.setState({ failed: false })}

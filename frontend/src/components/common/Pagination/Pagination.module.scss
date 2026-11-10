@@ -1,0 +1,51 @@
+@use '../../../styles/mixins' as *;
+
+.nav {
+  display: flex;
+  justify-content: center;
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+.item {
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 8px;
+  background: transparent;
+  border: 0;
+  border-radius: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.current {
+  background: var(--color-yellow);
+  color: #000;
+
+  &:hover:not(:disabled) {
+    background: var(--color-yellow);
+  }
+}
+
+.gap {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+}

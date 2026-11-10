@@ -1,0 +1,32 @@
+@use '../../../styles/mixins' as *;
+
+.field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+.select {
+  min-height: 48px;
+  min-width: 160px;
+  width: 100%;
+  padding: 10px 36px 10px 14px;
+  background: var(--color-filter-input);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font-weight: 600;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='white' stroke-width='2'%3E%3Cpath d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
+
+  option {
+    background: var(--color-surface);
+    color: #fff;
+  }
+}

@@ -1,0 +1,106 @@
+@use '../../../../styles/mixins' as *;
+
+.scroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    vertical-align: middle;
+  }
+
+  thead th {
+    font-weight: 700;
+    color: var(--color-text-secondary);
+  }
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+  background: transparent;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  @include focus-ring;
+}
+
+.row {
+  &.best > * {
+    background: var(--color-surface-inset);
+  }
+  &.best > th {
+    border-left: 4px solid var(--color-yellow);
+  }
+  &.unavailable {
+    opacity: 0.6;
+  }
+}
+
+.seller {
+  font-weight: 700;
+}
+
+.bestChip {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 8px;
+  background: var(--color-yellow);
+  color: #000;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 22px;
+}
+
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  svg {
+    color: var(--color-yellow);
+    fill: var(--color-yellow);
+  }
+}
+
+.low {
+  font-weight: 700;
+  color: var(--color-yellow);
+}
+
+.muted {
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.action {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+}
+
+.inCart {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-green);
+}
+
+.error {
+  font-size: 0.75rem;
+  color: #ff9db5;
+}
+
+.note {
+  margin-top: 16px;
+}

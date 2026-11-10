@@ -1,0 +1,27 @@
+@use '../../../../styles/mixins' as *;
+
+// 2 columns on a phone, 4 from where the 264 px sidebar is docked (card width 267 + gap 24, DESIGN_TOKENS.md).
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  transition: opacity 120ms;
+
+  @include up(sm) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  @include up(md) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+  }
+}
+
+.busy {
+  opacity: 0.55;
+}
+
+.skeleton {
+  aspect-ratio: 267 / 440;
+  height: auto;
+  background: var(--color-card);
+}

@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Http\JsonErrorHandler;
 use App\Middleware\CorsMiddleware;
 use App\Middleware\CsrfMiddleware;
+use App\Middleware\SecurityHeadersMiddleware;
+use App\Support\ConfigGuard;
 use DI\Bridge\Slim\Bridge;
 use Dotenv\Dotenv;
 use Slim\App;
@@ -19,6 +21,7 @@ return static function (array $overrides = []): App {
     Dotenv::createImmutable($root)->safeLoad(); // real env vars (Docker) win over .env
 
     $settings = (require $root . '/config/settings.php')();
+    ConfigGuard::assertSafe($settings); // a public deployment must not run on the secrets published in this repository
     $container = (require $root . '/config/container.php')($settings, $overrides);
 
     $app = Bridge::create($container);
@@ -38,6 +41,7 @@ return static function (array $overrides = []): App {
         static fn ($request, Throwable $e) => (new JsonErrorHandler($responses, $settings['debug']))($request, $e)
     );
     $app->add(new CorsMiddleware($responses, $settings['cors']['origins']));
+    $app->add(new SecurityHeadersMiddleware($settings['auth']['cookie_secure'])); // outermost: also covers CORS preflights and error responses
 
     (require $root . '/config/routes.php')($app);
 

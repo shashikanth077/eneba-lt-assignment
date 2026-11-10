@@ -1,0 +1,84 @@
+@use '../../../../styles/mixins' as *;
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 1.375rem;
+
+  @include up(md) {
+    font-size: 1.75rem;
+  }
+}
+
+.scrollers {
+  display: none;
+  gap: 4px;
+
+  @include up(md) {
+    display: flex;
+  }
+}
+
+.scroll {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+}
+
+.rail {
+  display: flex;
+  gap: 16px;
+  padding-bottom: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+.item {
+  flex: 0 0 auto;
+  width: 150px;
+  scroll-snap-align: start;
+
+  @include up(sm) {
+    width: 180px;
+  }
+  @include up(md) {
+    width: 210px;
+  }
+  @include up(lg) {
+    width: 230px;
+  }
+}
+
+.skeletonTitle {
+  width: 220px;
+  height: 32px;
+  margin-bottom: 8px;
+}
+
+.skeletonRow {
+  display: flex;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.skeletonCard {
+  aspect-ratio: 3 / 4;
+  width: 100%;
+  height: auto;
+}

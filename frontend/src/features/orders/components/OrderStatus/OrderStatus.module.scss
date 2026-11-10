@@ -1,0 +1,24 @@
+.badge {
+  display: inline-block;
+  padding: 0 12px;
+  border-radius: 14px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 28px;
+}
+.success {
+  background: var(--color-green);
+  color: #000;
+}
+.warning {
+  background: var(--color-yellow);
+  color: #000;
+}
+.error {
+  background: var(--color-red);
+  color: #fff;
+}
+.neutral {
+  background: var(--color-chip);
+  color: #fff;
+}

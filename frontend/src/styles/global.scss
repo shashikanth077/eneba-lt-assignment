@@ -1,0 +1,125 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+:root {
+  --color-page: #{$color-page};
+  --color-nav-bar: #{$color-nav-bar};
+  --color-surface: #{$color-surface};
+  --color-surface-inset: #{$color-surface-inset};
+  --color-surface-input: #{$color-surface-input};
+  --color-filter-panel: #{$color-filter-panel};
+  --color-filter-input: #{$color-filter-input};
+  --color-chip: #{$color-chip};
+  --color-card: #{$color-card};
+  --color-footer: #{$color-footer};
+  --color-yellow: #{$color-yellow};
+  --color-blue: #{$color-blue};
+  --color-green: #{$color-green};
+  --color-mint: #{$color-mint};
+  --color-red: #{$color-red};
+  --color-text: #{$color-text};
+  --color-text-secondary: #{$color-text-secondary};
+  --color-text-muted: #{$color-text-muted};
+  --color-placeholder: #{$color-placeholder};
+  --color-border: #{$color-border};
+  --radius: 2px;
+  --space: 8px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-text);
+  font-family: $font-stack;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol,
+figure {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+h1 {
+  font-size: 2.125rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+a {
+  color: inherit;
+}
+
+// Links inside running text are underlined: colour alone is not enough to tell them apart (WCAG 1.4.1).
+p a,
+li a.inline,
+a.inline {
+  color: var(--color-yellow);
+  text-decoration: underline;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+}
+
+fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-yellow);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  @include visually-hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -6,6 +6,7 @@
  * (backend/tests/bin/dev_order.php) and a correctly SIGNED webhook is posted to the real webhook endpoint, exactly what Stripe sends
  * after the card 4242 4242 4242 4242 succeeds. Everything after the card form is therefore real: polling, keys, reveal, copy.
  *
+ * (The API's registration limit is 10/hour per address: start it with RATE_LIMITS_ENABLED=false when you run these repeatedly.)
  * Needs: API on :8080 started with STRIPE_WEBHOOK_SECRET=whsec_e2e (and an empty STRIPE_SECRET_KEY), `npm run dev` on :5173.
  *   cd frontend && SQL_CMD="mariadb --socket=/run/mysqld/mysqld.sock keymart" NODE_PATH=$(npm root -g) node e2e/commerce.e2e.cjs
  */
@@ -92,9 +93,9 @@ const webhook = async (eventId, intentId, amount) => {
   const sellers = await page.$$eval('tbody tr th', (els) =>
     els.map((e) => e.childNodes[0].textContent.trim()),
   );
-  await page.getByRole('button', { name: `Add ${sellers[0]}'s offer to cart` }).click();
+  await page.getByRole('button', { name: `Add to cart, offer from ${sellers[0]}` }).click();
   await header().getByRole('link', { name: 'Cart, 1 items' }).waitFor();
-  await page.getByRole('button', { name: `Add ${sellers[1]}'s offer to cart` }).click();
+  await page.getByRole('button', { name: `Add to cart, offer from ${sellers[1]}` }).click();
   await header().getByRole('link', { name: 'Cart, 2 items' }).waitFor();
   await page.goto(BASE + '/cart');
   await page.getByRole('list', { name: 'Cart items' }).waitFor();
@@ -143,7 +144,7 @@ const webhook = async (eventId, intentId, amount) => {
   );
   await page.goto(BASE + `/product/${slug}`);
   await page.getByRole('table').waitFor();
-  await page.getByRole('button', { name: `Add ${sellers[1]}'s offer to cart` }).click();
+  await page.getByRole('button', { name: `Add to cart, offer from ${sellers[1]}` }).click();
   await header().getByRole('link', { name: 'Cart, 2 items' }).waitFor();
 
   // 3. Checkout page: summary, and an honest failure when Stripe is not configured.
@@ -173,7 +174,14 @@ const webhook = async (eventId, intentId, amount) => {
   const made = JSON.parse(
     execSync(`php tests/bin/dev_order.php ${email}`, { cwd: BACKEND, encoding: 'utf8' }).trim(),
   );
-  await page.goto(BASE + `/account/orders/${made.orderId}`);
+  // the page Stripe sends the buyer to: it must wait for the server, not claim success
+  await page.goto(BASE + `/payment/success?order=${made.orderId}`);
+  await page.getByText('Confirming your payment…').first().waitFor();
+  check(
+    (await page.getByText('Payment confirmed').count()) === 0,
+    'payment result page: waits, claims nothing while the order is pending',
+  );
+  await page.goto(BASE + `/orders/${made.orderId}`);
   await page.getByText(/waiting for confirmation/).waitFor();
   check(true, 'pending order: "waiting for confirmation", no keys');
   check(
@@ -217,7 +225,7 @@ const webhook = async (eventId, intentId, amount) => {
     (await header().getByRole('link', { name: /^Cart/ }).getAttribute('aria-label')) === 'Cart',
     'the cart badge is gone once the order is paid',
   );
-  await page.goto(BASE + '/account/orders');
+  await page.goto(BASE + '/orders');
   const row = page.getByRole('list', { name: 'Orders' }).getByRole('link').first();
   await row.waitFor();
   check(/Paid/.test(await row.innerText()), 'order list shows the order as Paid');
@@ -240,7 +248,7 @@ const webhook = async (eventId, intentId, amount) => {
   await stranger.getByLabel(/password/i).fill('correct-horse-battery');
   await stranger.getByRole('button', { name: 'Create account' }).click();
   await stranger.waitForURL(BASE + '/');
-  await stranger.goto(BASE + `/account/orders/${made.orderId}`);
+  await stranger.goto(BASE + `/orders/${made.orderId}`);
   await stranger.getByText('We could not find that order').waitFor();
   check(
     !(await stranger.locator('body').innerText()).includes(keyText),

@@ -1,4 +1,4 @@
-import type { BannerItem, HomeBlockMeta, HomeProduct } from '../../api/types';
+import type { BannerItem, HomeBlockMeta, HomeProduct } from '../../types/api.types';
 
 /**
  * Everything the homepage receives is data from the database, so it is checked before it is rendered: a bad row must make ONE block

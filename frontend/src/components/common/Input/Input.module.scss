@@ -1,0 +1,47 @@
+@use '../../../styles/mixins' as *;
+
+.field {
+  display: grid;
+  gap: 4px;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
+.input {
+  min-height: 48px;
+  padding: 10px 14px;
+  background: var(--color-filter-input);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font-weight: 600;
+  width: 100%;
+
+  &::placeholder {
+    color: var(--color-placeholder);
+    opacity: 1;
+  }
+
+  &:hover {
+    border-color: #8670b5;
+  }
+
+  &[aria-invalid='true'] {
+    border-color: var(--color-red);
+  }
+}
+
+// A line is always reserved under the field: a message appearing must not move what is below it
+// (it once pushed a link out from under the pointer between mouse-down and mouse-up).
+.helper {
+  min-height: 1.25em;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.error {
+  color: #ff9db5;
+}

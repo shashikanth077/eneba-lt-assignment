@@ -69,6 +69,26 @@ final class Doctor
         ];
     }
 
+    /**
+     * The same rules the app enforces at start-up for a public deployment (ConfigGuard), reported as hints on a local machine.
+     *
+     * @param array<string, mixed> $settings
+     * @return Check
+     */
+    public static function placeholders(array $settings): array
+    {
+        $usesJwt = in_array($settings['auth']['jwt_secret'], ConfigGuard::KNOWN_JWT_SECRETS, true);
+        $usesKey = in_array($settings['keys']['encryption'], ConfigGuard::KNOWN_KEY_ENCRYPTION_KEYS, true);
+        if (!$usesJwt && !$usesKey) {
+            return self::pass('Placeholder secrets', 'none in use');
+        }
+        $which = implode(' and ', array_filter([$usesJwt ? 'JWT_SECRET' : null, $usesKey ? 'KEY_ENCRYPTION_KEY' : null]));
+
+        return ConfigGuard::isLocal($settings)
+            ? self::warn('Placeholder secrets', "$which still has the public example value. Fine on this machine; the app REFUSES to start with it once APP_URL is a real address.")
+            : self::fail('Placeholder secrets', "$which is the public example value on a non-local deployment: the app will not start. See ConfigGuard.");
+    }
+
     /** @return Check */
     public static function stripe(string $secretKey, string $webhookSecret): array
     {
@@ -175,6 +195,7 @@ final class Doctor
             ? self::pass('.env', 'found')
             : self::warn('.env', 'backend/.env not found: using defaults and real environment variables. Copy .env.xampp.example to .env.');
         array_push($checks, ...self::secrets($env));
+        $checks[] = self::placeholders($settings);
         $checks[] = self::stripe((string) $settings['stripe']['secret_key'], (string) $settings['stripe']['webhook_secret']);
         $checks[] = self::cacheDirectory((string) $settings['cache']['driver'], (string) $settings['cache']['dir']);
 

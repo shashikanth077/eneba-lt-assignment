@@ -4,6 +4,7 @@
  *   docker compose up            (or: php -S 127.0.0.1:8080 in backend/ + `npm run dev` here, with the DB seeded)
  *   NODE_PATH=$(npm root -g) node e2e/shell.e2e.cjs            # needs Playwright installed (not a project dependency)
  *
+ * (The API's registration limit is 10/hour per address: start it with RATE_LIMITS_ENABLED=false when you run these repeatedly.)
  * Env: BASE_URL (default http://127.0.0.1:5173), SHOTS (directory for screenshots, optional).
  * Exits 1 on the first failed check.
  */
@@ -36,7 +37,9 @@ async function suggestionsFor(page, text) {
     null,
     { timeout: 8000 },
   );
-  return (await page.getByRole('option').allTextContents()).map((t) => t.trim());
+  return (
+    await page.getByRole('listbox', { name: 'Suggestions' }).getByRole('option').allTextContents()
+  ).map((t) => t.trim());
 }
 
 (async () => {
@@ -102,7 +105,7 @@ async function suggestionsFor(page, text) {
 
   const top = await suggestionsFor(page, 'stormhaven');
   check(top.length <= 6, 'at most 6 suggestions');
-  await page.getByRole('option').first().click();
+  await page.getByRole('listbox', { name: 'Suggestions' }).getByRole('option').first().click();
   await page.waitForURL(/\/product\/.+-stormhaven-/);
   check(
     (await searchBox(page).inputValue()) === '',
@@ -118,16 +121,16 @@ async function suggestionsFor(page, text) {
   );
 
   // ---- protected routes: login, then back ---------------------------------------------------------
-  await page.goto(BASE + '/account/orders');
-  await page.waitForURL(/\/login\?next=%2Faccount%2Forders/);
+  await page.goto(BASE + '/orders');
+  await page.waitForURL(/\/login\?next=%2Forders/);
   await page.getByRole('heading', { name: 'Sign in' }).waitFor();
   check(
     await page.getByRole('heading', { name: 'Sign in' }).isVisible(),
-    'signed out: /account/orders redirects to /login?next=%2Faccount%2Forders',
+    'signed out: /orders redirects to /login?next=%2Forders',
   );
 
   await page.getByRole('link', { name: 'Create an account' }).click();
-  await page.waitForURL(/\/register\?next=%2Faccount%2Forders/);
+  await page.waitForURL(/\/register\?next=%2Forders/);
   check(true, 'the next target survives the switch to Register');
 
   const email = `e2e-${Date.now()}@example.com`;
@@ -135,15 +138,15 @@ async function suggestionsFor(page, text) {
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill('correct horse 9');
   await page.getByRole('button', { name: 'Create account' }).click();
-  await page.waitForURL(`${BASE}/account/orders`);
+  await page.waitForURL(`${BASE}/orders`);
   await page.getByText('No orders yet').waitFor();
-  check(true, 'after registering you land back on /account/orders (empty state shown)');
+  check(true, 'after registering you land back on /orders (empty state shown)');
   check(
-    await page.getByRole('button', { name: 'Account menu' }).isVisible(),
+    await page.getByRole('button', { name: /Account menu/ }).isVisible(),
     'header now shows the account menu',
   );
   check(
-    (await page.getByRole('button', { name: 'Account menu' }).innerText()).includes('Ada Tester'),
+    (await page.getByRole('button', { name: /Account menu/ }).innerText()).includes('Ada Tester'),
     'with the display name',
   );
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/desktop-orders.png` });
@@ -151,11 +154,11 @@ async function suggestionsFor(page, text) {
   await page.reload();
   await page.getByText('No orders yet').waitFor();
   check(
-    page.url() === `${BASE}/account/orders`,
+    page.url() === `${BASE}/orders`,
     'a refresh keeps you on the protected page (no bounce to login)',
   );
 
-  await page.getByRole('button', { name: 'Account menu' }).click();
+  await page.getByRole('button', { name: /Account menu/ }).click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await page.waitForURL(`${BASE}/`);
   await header(page).getByRole('link', { name: 'Sign in' }).waitFor();
@@ -182,7 +185,7 @@ async function suggestionsFor(page, text) {
   check(true, 'logging in sends you back to /cart');
 
   // ---- no open redirect -----------------------------------------------------------------------------
-  await page.getByRole('button', { name: 'Account menu' }).click();
+  await page.getByRole('button', { name: /Account menu/ }).click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await page.waitForURL(`${BASE}/`);
   await page.goto(BASE + '/login?next=//evil.example/steal');

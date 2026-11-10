@@ -1,4 +1,4 @@
-import type { Cart, Offer, ProductResponse } from '../api/types';
+import type { Cart, Offer, ProductResponse } from '../types/api.types';
 import { apiError, fakeApi, type FakeApi, type FakeRoutes } from './fakeApi';
 
 export const offer = (

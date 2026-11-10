@@ -1,0 +1,90 @@
+@use '../../../styles/mixins' as *;
+
+.page {
+  display: grid;
+  gap: 16px;
+}
+
+.title {
+  font-size: 1.75rem;
+
+  @include up(md) {
+    font-size: 2.125rem;
+  }
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  @include up(md) {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+}
+
+.search {
+  flex: 1;
+  min-width: 0;
+}
+
+.controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+
+  // the sort field takes the room left next to the Filters button, so a phone never overflows
+  > :last-child {
+    flex: 1;
+    min-width: 0;
+  }
+
+  @include up(md) {
+    > :last-child {
+      flex: none;
+      width: 220px;
+    }
+  }
+}
+
+.layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.sidebar {
+  width: 264px;
+  flex: none;
+  padding: 16px;
+  background: var(--color-filter-panel);
+}
+
+.results {
+  flex: 1;
+  min-width: 0;
+}
+
+.count {
+  min-height: 24px;
+  margin-bottom: 16px;
+  color: var(--color-text-secondary);
+}
+
+.pagination {
+  margin-top: 32px;
+}
+
+.badge {
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--color-red);
+  font-size: 0.75rem;
+  line-height: 20px;
+}
+
+.drawerFooter {
+  margin-top: 16px;
+}
