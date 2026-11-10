@@ -11,6 +11,10 @@ return static function (): array {
 
     // Database variables: DB_* (as before) or MYSQL_* (same meaning), so one connection serves XAMPP and Railway; only the values differ.
     $db = static fn (string $name, string $default = ''): string => $env('DB_' . $name) !== '' ? $env('DB_' . $name) : $env('MYSQL_' . $name, $default);
+    // Railway gives a service one connection URL (MYSQL_URL). Referenced as ${{ MySQL.MYSQL_URL }} from the backend service it carries the
+    // PRIVATE address (mysql.railway.internal), which only works between services inside the same Railway project and does not depend on
+    // anybody's network. Individual DB_*/MYSQL_* variables, when set, still win over what the URL says.
+    $url = \App\Support\DatabaseUrl::parse($env('MYSQL_URL'));
     $local = in_array($env('APP_ENV', 'production'), ['local', 'test'], true);
 
     return [
@@ -18,12 +22,12 @@ return static function (): array {
         'debug' => filter_var($env('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN),
         'db' => [
             // Localhost is only a default for local development; a deployment must name its database host (ConfigGuard checks).
-            'host' => $db('HOST', $local ? '127.0.0.1' : ''),
-            'port' => (int) $db('PORT', '3306'),
+            'host' => $db('HOST', $url['host'] ?? ($local ? '127.0.0.1' : '')),
+            'port' => (int) $db('PORT', (string) ($url['port'] ?? 3306)),
             // MYSQL_DATABASE / DB_NAME, MYSQL_USER / DB_USER, MYSQL_PASSWORD / DB_PASS
-            'name' => $env('DB_NAME') !== '' ? $env('DB_NAME') : $env('MYSQL_DATABASE', 'keymart'),
-            'user' => $db('USER', 'keymart'),
-            'pass' => $env('DB_PASS') !== '' ? $env('DB_PASS') : $env('MYSQL_PASSWORD'),
+            'name' => $env('DB_NAME') !== '' ? $env('DB_NAME') : $env('MYSQL_DATABASE', $url['name'] ?? 'keymart'),
+            'user' => $db('USER', $url['user'] ?? 'keymart'),
+            'pass' => $env('DB_PASS') !== '' ? $env('DB_PASS') : $env('MYSQL_PASSWORD', $url['pass'] ?? ''),
             // Managed MySQL hosts require TLS. DB_SSL=true turns it on and verifies the server certificate against DB_SSL_CA (a file path,
             // for hosts with their own CA) or, when that is empty, the system's CA bundle. DB_SSL_VERIFY=false skips verification (weaker).
             'ssl' => filter_var($env('DB_SSL', 'false'), FILTER_VALIDATE_BOOLEAN),

@@ -103,3 +103,28 @@ The full PHPUnit suite (registration, e-mail verification, login/JWT, products, 
 4. In the browser: sign in as `demo.buyer@keymart.test` / `Demo-Buyer-2027`, add an offer, pay with Stripe test card 4242 4242 4242 4242, see the key.
 
 Rollback: the import never drops anything; to start over, delete the Railway database's tables (or create a new MySQL service) and import again.
+
+
+## Private networking: the backend must not use the public proxy (P31)
+
+**Who connects to MySQL.** Only server code ever does: the PHP backend (and your own tools when you import or inspect). The React app talks to the backend's HTTPS API (`/api/...`) and never to MySQL, and no database credential is sent to the browser (the API's responses and logs carry none). So a visitor's Wi-Fi, mobile data, ISP or DNS cannot affect the backend's database connection, **provided the backend runs on Railway and reaches MySQL over Railway's private network.**
+
+**Why a database "works on mobile data but not on some Wi-Fi".** The public TCP proxy is `<name>.proxy.rlwy.net` on a non-standard port. Many Wi-Fi networks (offices, schools, hotels, some home routers and ISP DNS filters) block outbound traffic to unusual ports or hosts. That affects whatever runs *on that network*: MySQL Workbench or the `mysql` client on your laptop, `php bin/seed.php` run from your computer against Railway, or XAMPP pointed at the Railway database. It does not affect a backend container inside Railway. (Not confirmed on your network from here; the checks below separate the two cases.) A backend configured with `DB_HOST=<name>.proxy.rlwy.net` goes out of Railway and back in through the proxy: it works while Railway's proxy is up, but it is the wrong path (slower, metered as egress) and needless exposure; use the private one.
+
+**Configure the backend service (Railway dashboard):**
+1. Backend service > *Variables* > **New Variable** `MYSQL_URL` = `${{ MySQL.MYSQL_URL }}` (the reference name of your MySQL service goes before the dot; `MySQL` is its default name). Railway resolves it to `mysql://root:<password>@mysql.railway.internal:3306/railway`.
+2. **Delete** `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` (and `MYSQL_HOST`, ... ) from the backend service: an individual variable overrides the URL, so a leftover `DB_HOST` pointing at the proxy keeps the public path. Do not set `DB_SSL` for the private network.
+3. Redeploy. The container start step retries the database for about a minute, which also covers the moment right after boot when Railway's private DNS is not yet answering.
+4. Read the deploy log: `Applied: ...` / `Nothing to migrate.` and the `game_keys` line mean the private connection works.
+
+The code reads `MYSQL_URL` (`App\Support\DatabaseUrl`), percent-decodes the password, and lets any individual `DB_*`/`MYSQL_*` variable win over it. Local XAMPP is unchanged: `backend/.env` keeps `DB_HOST=127.0.0.1`, `DB_USER=root`, empty `DB_PASS`, and there is no `MYSQL_URL` there. Keep Railway values out of `backend/.env` (a copied production `MYSQL_URL` would be a private hostname that does not resolve outside Railway anyway).
+
+**Connection behaviour (inspected).** One PDO connection per request, created lazily on the first query (a request that needs no data opens none), not persistent (no stale connections between requests). The connect timeout is 5 seconds (`PDO::ATTR_TIMEOUT`), so an unreachable database fails with `503 {"error":{"code":"db_unavailable"}}` quickly instead of hanging the request; the real reason (`[db] connection problem: ...`, never the password) goes to the log only. `GET /api/health` runs `SELECT 1` and reports `db: ok` plus `stock`.
+
+**Verify (this is what proves it, from the deployed API, not from a laptop):**
+1. From any network, including the one that fails for your DB tools: `curl -s https://<your-api>/api/health` must return `{"status":"ok","db":"ok",...}`. The API answering from a network that blocks the proxy proves the backend does not depend on that network.
+2. Open the site on mobile data and on the Wi-Fi in question: homepage, store, a product, sign in. Same behaviour.
+3. Prove the backend uses the private path: after step 2 of the configuration, the backend works with **public networking switched off** on the MySQL service (Railway: MySQL > Settings > Networking > remove the TCP proxy). If the API still reports `db: ok` after a redeploy, it is on the private network. Re-enable the proxy only when you need to use Workbench.
+4. For your own tools on a Wi-Fi that blocks the proxy: `Test-NetConnection <name>.proxy.rlwy.net -Port <port>` (Windows) or `nc -vz <host> <port>`: `False`/timeout while mobile data succeeds means that network blocks the port. Use mobile data or a VPN for imports, or run the one-off command inside the Railway container (`railway ssh`, if your CLI offers it) so it uses the private network.
+
+**Status of this change.** Tested locally: the app configured *only* by a `MYSQL_URL` (including an escaped password) serves health, catalogue, homepage and sign-in; malformed URLs configure nothing; an unreachable database answers `503` immediately (the sandbox refuses the connection at once, so the 5-second timeout path itself could not be timed here); PHPUnit 386. **Not tested (needs your Railway project): that `mysql.railway.internal` resolves from your backend, i.e. the steps above and checks 1-3.**
