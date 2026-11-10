@@ -114,7 +114,7 @@ mysql -h <host> -P <port> -u <user> -p --ssl-mode=VERIFY_CA --ssl-ca=ca.pem <dat
 | `STRIPE_SECRET_KEY` | `sk_test_...` | step 2 |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` | from step 6; checkout works without it but orders never become paid |
 | `RUN_MIGRATIONS` | `true` | apply new `database/migrations/*.sql` on every start (safe to repeat) |
-| `SEED_ON_START` | `if-empty` | load the demo catalogue and the two demo accounts when no product exists yet. `always` re-runs the (idempotent) seeder every start; `false` never |
+| `SEED_ON_START` | `if-empty` | load the demo catalogue, the game keys and the two demo accounts when no game key exists yet (so it also completes a database imported from `railway_import.sql`). `always` re-runs the (idempotent) seeder every start; `false` never |
 | `TRUST_PROXY` | `true` | the API sits behind proxies; the client address comes from `X-Forwarded-For` |
 | `TRUSTED_PROXY_HOPS` | `2` | Vercel + Render. If the address cannot be determined the limits fall back to one shared bucket (safe, never spoofable) |
 | `RATE_LIMIT_REGISTER_PER_HOUR` | `30` (optional) | default 10 per address; behind the proxies several visitors may share one, which matters when a reviewer registers a few accounts |
