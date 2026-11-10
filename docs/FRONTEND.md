@@ -122,5 +122,12 @@ SQL_CMD="mysql -uroot keymart" NODE_PATH=$(npm root -g) node e2e/home.e2e.cjs   
 SQL_CMD="mysql -uroot keymart" NODE_PATH=$(npm root -g) node e2e/product.e2e.cjs    # 21 checks
 NODE_PATH=$(npm root -g) node e2e/commerce.e2e.cjs                                  # 28 checks: sign-up, cart, pending order -> signed webhook -> keys
 ```
+```bash
+cd frontend && npx playwright install chromium && npm run test:e2e   # one @playwright/test spec: e2e/purchase.spec.ts
+```
+`playwright.config.ts` starts the PHP API (:8080, no Stripe key, webhook secret `whsec_e2e`) and Vite (:5173) itself and reuses them when they already run; the database must exist (`php bin/setup.php`). The spec walks register -> two offers from different sellers -> cart edits (total equals the server's) -> checkout -> pending order -> signed webhook -> keys appear without reload -> reveal/copy -> order history. Stripe's card form is the one step it cannot run (needs a Stripe account); the spec plays Stripe's part with a signed webhook and creates the pending order through the API's fake gateway (`backend/tests/bin/dev_order.php`). The older `e2e/*.e2e.cjs` scripts stay as wider manual checks; only `purchase.spec.ts` runs in CI.
+
+**CI** (`.github/workflows/ci.yml`, on every push): `backend` (PHPUnit against a MySQL 8 service, skipped tests fail the job), `frontend` (prettier, eslint, Vitest, `tsc -b && vite build`), then `e2e` (Playwright; failure uploads the trace).
+
 Component and page tests run the real routes, store and sagas against an in-memory replacement of `fetch` (`src/test/fakeApi.ts`), so the Axios client is exercised too. Use `http://localhost:5173` (not 127.0.0.1): the backend's CSRF
 origin list names `localhost`. The real card payment (Stripe.js + a Stripe account) cannot run in the development sandbox: the tests use stand-ins for `@stripe/*` and the browser script plays Stripe's part with a signed webhook.
