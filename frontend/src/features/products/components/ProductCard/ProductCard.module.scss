@@ -61,6 +61,7 @@
   gap: 8px;
   transform: translateY(8px);
   opacity: 0;
+  pointer-events: none;
   transition:
     opacity 160ms ease,
     transform 160ms ease;
@@ -70,6 +71,7 @@
 .card:focus-within .actions {
   transform: translateY(0);
   opacity: 1;
+  pointer-events: auto;
 }
 
 // A touch screen has no hover: show the two buttons all the time.
@@ -77,6 +79,7 @@
   .actions {
     transform: none;
     opacity: 1;
+    pointer-events: auto;
   }
 }
 
