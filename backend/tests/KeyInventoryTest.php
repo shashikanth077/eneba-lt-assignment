@@ -124,4 +124,19 @@ final class KeyInventoryTest extends DbTestCase
         self::assertSame('sold', self::$pdo->query("SELECT status FROM game_keys WHERE key_hash = '" . KeyCipher::fingerprint('IMPORT-AAAAA-11111') . "'")->fetchColumn(), 'a delivered key is never put back on the shelf');
         unlink($file);
     }
+
+    public function testDoctorReportsEmptyStockAndAWrongSecret(): void
+    {
+        $failed = static fn (array $checks): array => array_column(array_filter($checks, static fn (array $c): bool => $c['status'] === 'fail'), 'name');
+
+        self::assertSame(['Game keys'], $failed(\App\Support\Doctor::gameKeys(self::$pdo, (string) $_ENV['KEY_ENCRYPTION_KEY'])), 'no keys: nothing is buyable');
+
+        (new DatabaseSeeder(self::$pdo, $this->cipher))->run();
+        self::assertSame([], $failed(\App\Support\Doctor::gameKeys(self::$pdo, (string) $_ENV['KEY_ENCRYPTION_KEY'])));
+        self::assertSame(
+            ['KEY_ENCRYPTION_KEY matches the stored keys'],
+            $failed(\App\Support\Doctor::gameKeys(self::$pdo, base64_encode(random_bytes(32)))),
+            'keys stored under another secret are reported',
+        );
+    }
 }

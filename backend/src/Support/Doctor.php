@@ -160,6 +160,38 @@ final class Doctor
                 : self::warn('Demo data', 'the catalog is empty. Run: php bin/seed.php');
         }
 
+        if (in_array('game_keys', $tables, true)) {
+            array_push($checks, ...self::gameKeys($pdo, (string) ($settings['keys']['encryption'] ?? '')));
+        }
+
+        return $checks;
+    }
+
+    /**
+     * Stock is the number of keys on the shelf. Zero means every game shows "Out of stock" (the deployed /api/health says
+     * "stock":"empty"). A key that cannot be decrypted means KEY_ENCRYPTION_KEY is not the one the keys were stored with.
+     *
+     * @return list<Check>
+     */
+    public static function gameKeys(PDO $pdo, string $encryptionKey): array
+    {
+        $byStatus = $pdo->query('SELECT status, COUNT(*) FROM game_keys GROUP BY status')->fetchAll(PDO::FETCH_KEY_PAIR);
+        $available = (int) ($byStatus['available'] ?? 0);
+        $summary = $byStatus === [] ? 'none stored' : implode(', ', array_map(static fn ($s, $n): string => "$n $s", array_keys($byStatus), $byStatus));
+        $checks = [$available > 0
+            ? self::pass('Game keys', "$available available ($summary)")
+            : self::fail('Game keys', "none available ($summary): every game shows \"Out of stock\". Create them with `php bin/seed.php` using this database's connection and the SAME KEY_ENCRYPTION_KEY the deployed API uses (docs/KEYS.md).")];
+
+        $sample = $pdo->query('SELECT key_enc FROM game_keys ORDER BY id LIMIT 1')->fetchColumn();
+        if ($sample !== false) {
+            try {
+                KeyCipher::fromBase64($encryptionKey)->decrypt((string) $sample);
+                $checks[] = self::pass('KEY_ENCRYPTION_KEY matches the stored keys', 'a stored key decrypts');
+            } catch (Throwable) {
+                $checks[] = self::fail('KEY_ENCRYPTION_KEY matches the stored keys', 'a stored key cannot be decrypted with the KEY_ENCRYPTION_KEY used here: use the key the keys were created with (never rotate it without re-encrypting).');
+            }
+        }
+
         return $checks;
     }
 

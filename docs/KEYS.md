@@ -35,3 +35,25 @@ Stock everywhere (list, filters, product page, cart, checkout) is the same numbe
 2. Deploy: migration 008 applies on start (`RUN_MIGRATIONS=true`, the default). No key is re-created: offers that already have keys are skipped.
 3. Keep the same `KEY_ENCRYPTION_KEY` forever. If you must rotate it, decrypt with the old key and re-encrypt with the new one in one script before deploying; there is none in this repository because nothing here needs it yet.
 4. The demo catalogue and demo accounts are for demos: for a real shop set `SEED_ON_START=false` and load keys with `bin/import_keys.php`.
+
+
+## Seeding the PRODUCTION database yourself (P32)
+
+`GET /api/health` answering `"stock":"empty"` means the database that API uses has no available key, so every game shows "Out of stock". Seeding your local XAMPP database changes nothing there: production is a different database. The start step of the Docker image seeds it when it runs (`SEED_ON_START`, default `if-empty`: it runs when **no key is available**), but it only exists where the image's `docker-entrypoint.sh` really starts the container. If you are unsure it did, seed once by hand. It is safe to repeat.
+
+From your computer (use mobile data if your Wi-Fi blocks Railway's proxy port). Use the **public** connection details of the Railway MySQL service (Variables: the TCP proxy host and port, user, password, database) and the **same `KEY_ENCRYPTION_KEY` the deployed API uses**. Set all five `DB_*` variables: `backend/.env` also defines `DB_HOST` and friends, and an individual variable beats `MYSQL_URL`, so setting only the URL would silently seed your *local* database.
+
+```powershell
+cd backend
+$env:DB_HOST = "<name>.proxy.rlwy.net"
+$env:DB_PORT = "<proxy port>"
+$env:DB_NAME = "railway"
+$env:DB_USER = "root"
+$env:DB_PASS = "<password>"
+$env:KEY_ENCRYPTION_KEY = "<the production value>"
+C:\xampp\php\php.exe bin\migrate.php
+C:\xampp\php\php.exe bin\seed.php
+C:\xampp\php\php.exe bin\doctor.php
+```
+
+Every script prints `Database: user@host:port/name` first (never the password): check it is the Railway host before trusting the result. `seed.php` ends with `Available game keys: N`; `doctor.php` fails with "Game keys: none available" when the stock is empty and with "KEY_ENCRYPTION_KEY matches the stored keys" when the key differs from the one the stored keys were created with. Then reload `/api/health`: `"stock":"ok"`, and wait up to 2 minutes for the homepage cache.
