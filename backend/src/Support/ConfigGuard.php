@@ -45,6 +45,9 @@ final class ConfigGuard
             return [];
         }
         $problems = [];
+        if (($settings['db']['host'] ?? 'set') === '') {
+            $problems[] = 'DB_HOST (or MYSQL_HOST) is not set. A deployment must name its database host; localhost is only a default for APP_ENV=local.';
+        }
         if (strlen((string) $settings['auth']['jwt_secret']) < 32) {
             $problems[] = 'JWT_SECRET is not set (or shorter than 32 characters). Set it in the service environment: php -r "echo bin2hex(random_bytes(32));"';
         }

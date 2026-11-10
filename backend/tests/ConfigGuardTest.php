@@ -42,6 +42,14 @@ final class ConfigGuardTest extends TestCase
         self::assertStringContainsString('KEY_ENCRYPTION_KEY is not set', $problems[1]);
     }
 
+    public function testADeploymentWithoutADatabaseHostIsRefusedInsteadOfTryingLocalhost(): void
+    {
+        $problems = ConfigGuard::problems($this->settings(['db' => ['host' => '']]));
+
+        self::assertCount(1, $problems);
+        self::assertStringContainsString('DB_HOST (or MYSQL_HOST)', $problems[0]);
+    }
+
     public function testThePublishedJwtSecretIsRefusedBecauseItLetsAnyoneForgeASession(): void
     {
         $settings = $this->settings(['auth' => ['jwt_secret' => ConfigGuard::KNOWN_JWT_SECRETS[0]]]);
