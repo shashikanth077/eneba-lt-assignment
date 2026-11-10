@@ -46,6 +46,8 @@ Step 5 below creates them with your own key.
 **Regenerating it** (after a new migration): create a scratch database, run `DB_NAME=scratch php bin/setup.php`, then rebuild the file the way its header describes:
 the migrations in order, the ledger, then `mysqldump --no-create-info --complete-insert` of `platforms regions sellers products offers deals product_stats banners home_blocks users`.
 
+> **Browsing does not depend on stock (P25).** `/api/products` and `/api/filters` list every product even before keys exist: cards show "Out of stock" without a price. The homepage rails *Deals*, *Best sellers* and *New releases* still show only buyable offers (a deal on something nobody can buy would be misleading), so they stay empty until step 5 creates the keys.
+
 ## 4. Railway: create, expose, import
 
 1. Railway > *New Project* > *Provision MySQL* (or *Database > MySQL*).

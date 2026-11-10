@@ -19,7 +19,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
  *   D delta    psn    europe  Strategy 2026-05-20   50   offers: 5000 (10)
  *   E echo     steam  global  Puzzle   2023-02-02  400   offers: 500 | 700 | 800 (1 key each)
  *   F foxtrot  steam  global  Action   (all keys sold)      G golf  steam  global  Action  (offer inactive)
- * F and G exist but have nothing buyable, so they are not in the catalog list. Xbox has no products.
+ * F and G have nothing buyable, but they ARE listed (out of stock, no price, last when sorting by price): the catalog does not depend on
+ * stock, so a store whose keys have not been loaded yet still shows its products. Xbox has no products.
  */
 final class CatalogTest extends DbTestCase
 {
@@ -38,7 +39,7 @@ final class CatalogTest extends DbTestCase
         self::assertSame(['items', 'page', 'pageSize', 'total'], array_keys($body));
         self::assertSame(1, $body['page']);
         self::assertSame(24, $body['pageSize']);
-        self::assertSame(5, $body['total']);
+        self::assertSame(7, $body['total']);
 
         $echo = $body['items'][0];
         self::assertSame(
@@ -62,7 +63,11 @@ final class CatalogTest extends DbTestCase
         self::assertSame(1000, $alpha['fromPriceCents'], 'the 900 offer has no keys left');
         self::assertSame(2, $alpha['offerCount']);
         self::assertSame(50, $alpha['discountPct']);
-        self::assertSame([], $this->slugs($this->get('/api/products?pageSize=48')['items'], ['foxtrot-sold-out', 'golf-inactive']), 'sold out / inactive products are not listed');
+        foreach (['foxtrot-sold-out', 'golf-inactive'] as $slug) {
+            $unbuyable = $this->bySlug($this->get('/api/products?pageSize=48')['items'], $slug);
+            self::assertFalse($unbuyable['inStock'], "$slug is listed but not buyable");
+            self::assertNull($unbuyable['fromPriceCents']);
+        }
     }
 
     public function testDiscountIsTheDealOfTheCheapestOfferOnly(): void
@@ -88,22 +93,22 @@ final class CatalogTest extends DbTestCase
     public static function filterCases(): array
     {
         return [
-            'platform single' => ['platform=steam', ['echo-steam-global', 'alpha-steam-global', 'bravo-steam-europe']],
-            'platform array' => ['platform[]=steam&platform[]=playstation', ['echo-steam-global', 'alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe', 'delta-playstation-europe']],
+            'platform single' => ['platform=steam', ['echo-steam-global', 'alpha-steam-global', 'bravo-steam-europe', 'foxtrot-sold-out', 'golf-inactive']],
+            'platform array' => ['platform[]=steam&platform[]=playstation', ['echo-steam-global', 'alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe', 'delta-playstation-europe', 'foxtrot-sold-out', 'golf-inactive']],
             'platform without products' => ['platform[]=xbox', []],
             'platform unknown slug' => ['platform[]=nope', []],
             'region' => ['region[]=europe', ['bravo-steam-europe', 'delta-playstation-europe']],
-            'regions array' => ['region[]=europe&region[]=global', ['echo-steam-global', 'alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe', 'delta-playstation-europe']],
-            'genre' => ['genre=Action', ['alpha-steam-global', 'charlie-playstation-global']],
-            'genre array' => ['genre[]=Action&genre[]=RPG', ['alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe']],
+            'regions array' => ['region[]=europe&region[]=global', ['echo-steam-global', 'alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe', 'delta-playstation-europe', 'foxtrot-sold-out', 'golf-inactive']],
+            'genre' => ['genre=Action', ['alpha-steam-global', 'charlie-playstation-global', 'foxtrot-sold-out', 'golf-inactive']],
+            'genre array' => ['genre[]=Action&genre[]=RPG', ['alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe', 'foxtrot-sold-out', 'golf-inactive']],
             'price_min' => ['price_min=1000', ['alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe', 'delta-playstation-europe']],
             'price_min is inclusive' => ['price_min=500', ['echo-steam-global', 'alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe', 'delta-playstation-europe']],
             'price_max' => ['price_max=1400', ['echo-steam-global', 'alpha-steam-global', 'charlie-playstation-global']],
             'price range' => ['price_min=1000&price_max=2500', ['alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe']],
             'price range with no match' => ['price_min=1&price_max=499', []],
-            'combined platform+genre' => ['platform[]=steam&genre[]=Action', ['alpha-steam-global']],
+            'combined platform+genre' => ['platform[]=steam&genre[]=Action', ['alpha-steam-global', 'foxtrot-sold-out', 'golf-inactive']],
             'combined all' => ['platform[]=steam&region[]=global&genre[]=Puzzle&price_max=600', ['echo-steam-global']],
-            'empty values are ignored' => ['platform[]=&genre=', ['echo-steam-global', 'alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe', 'delta-playstation-europe']],
+            'empty values are ignored' => ['platform[]=&genre=', ['echo-steam-global', 'alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe', 'delta-playstation-europe', 'foxtrot-sold-out', 'golf-inactive']],
         ];
     }
 
@@ -119,12 +124,12 @@ final class CatalogTest extends DbTestCase
     public static function sortCases(): array
     {
         return [
-            'price_asc' => ['price_asc', ['echo-steam-global', 'alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe', 'delta-playstation-europe']],
-            'price_desc' => ['price_desc', ['delta-playstation-europe', 'bravo-steam-europe', 'charlie-playstation-global', 'alpha-steam-global', 'echo-steam-global']],
-            'popular' => ['popular', ['bravo-steam-europe', 'echo-steam-global', 'charlie-playstation-global', 'alpha-steam-global', 'delta-playstation-europe']],
-            'newest' => ['newest', ['delta-playstation-europe', 'alpha-steam-global', 'bravo-steam-europe', 'charlie-playstation-global', 'echo-steam-global']],
+            'price_asc' => ['price_asc', ['echo-steam-global', 'alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe', 'delta-playstation-europe', 'foxtrot-sold-out', 'golf-inactive']],
+            'price_desc' => ['price_desc', ['delta-playstation-europe', 'bravo-steam-europe', 'charlie-playstation-global', 'alpha-steam-global', 'echo-steam-global', 'foxtrot-sold-out', 'golf-inactive']],
+            'popular' => ['popular', ['bravo-steam-europe', 'echo-steam-global', 'charlie-playstation-global', 'alpha-steam-global', 'delta-playstation-europe', 'foxtrot-sold-out', 'golf-inactive']],
+            'newest' => ['newest', ['delta-playstation-europe', 'alpha-steam-global', 'bravo-steam-europe', 'charlie-playstation-global', 'echo-steam-global', 'golf-inactive', 'foxtrot-sold-out']],
             // alpha has the only deal on its cheapest offer; the rest tie at 0% and fall back to popularity
-            'discount' => ['discount', ['alpha-steam-global', 'bravo-steam-europe', 'echo-steam-global', 'charlie-playstation-global', 'delta-playstation-europe']],
+            'discount' => ['discount', ['alpha-steam-global', 'bravo-steam-europe', 'echo-steam-global', 'charlie-playstation-global', 'delta-playstation-europe', 'foxtrot-sold-out', 'golf-inactive']],
         ];
     }
 
@@ -141,31 +146,31 @@ final class CatalogTest extends DbTestCase
     public function testPaginationWalksEveryProductExactlyOnce(): void
     {
         $seen = [];
-        foreach ([1, 2, 3] as $page) {
+        foreach ([1, 2, 3, 4] as $page) {
             $body = $this->get("/api/products?sort=price_asc&pageSize=2&page=$page");
             self::assertSame($page, $body['page']);
             self::assertSame(2, $body['pageSize']);
-            self::assertSame(5, $body['total'], 'total ignores paging');
+            self::assertSame(7, $body['total'], 'total ignores paging');
             array_push($seen, ...array_column($body['items'], 'slug'));
         }
 
         self::assertSame(
-            ['echo-steam-global', 'alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe', 'delta-playstation-europe'],
+            ['echo-steam-global', 'alpha-steam-global', 'charlie-playstation-global', 'bravo-steam-europe', 'delta-playstation-europe', 'foxtrot-sold-out', 'golf-inactive'],
             $seen,
         );
     }
 
     public function testPaginationEdges(): void
     {
-        $lastPage = $this->get('/api/products?sort=price_asc&pageSize=2&page=3');
+        $lastPage = $this->get('/api/products?sort=price_asc&pageSize=2&page=4');
         self::assertCount(1, $lastPage['items'], 'partial last page');
 
-        $past = $this->get('/api/products?sort=price_asc&pageSize=2&page=4');
+        $past = $this->get('/api/products?sort=price_asc&pageSize=2&page=5');
         self::assertSame([], $past['items'], 'a page past the end is empty, not an error');
-        self::assertSame(5, $past['total']);
+        self::assertSame(7, $past['total']);
 
-        self::assertCount(5, $this->get('/api/products?pageSize=5')['items'], 'pageSize == total');
-        self::assertCount(5, $this->get('/api/products?pageSize=48')['items'], 'pageSize larger than total');
+        self::assertCount(7, $this->get('/api/products?pageSize=7')['items'], 'pageSize == total');
+        self::assertCount(7, $this->get('/api/products?pageSize=48')['items'], 'pageSize larger than total');
         self::assertCount(1, $this->get('/api/products?pageSize=1')['items'], 'smallest page size');
         self::assertSame(2, $this->get('/api/products?filter=x&platform=steam&price_max=500&pageSize=48&page=1')['total'] + 1, 'unknown params are ignored');
     }
@@ -216,17 +221,17 @@ final class CatalogTest extends DbTestCase
 
         self::assertSame(['platforms', 'regions', 'genres', 'price'], array_keys($body));
         self::assertSame(
-            [['value' => 'playstation', 'label' => 'PlayStation', 'count' => 2], ['value' => 'steam', 'label' => 'Steam', 'count' => 3]],
+            [['value' => 'playstation', 'label' => 'PlayStation', 'count' => 2], ['value' => 'steam', 'label' => 'Steam', 'count' => 5]],
             $body['platforms'],
             'Xbox has no products so it is not offered',
         );
         self::assertSame(
-            [['value' => 'europe', 'label' => 'Europe', 'count' => 2], ['value' => 'global', 'label' => 'Global', 'count' => 3]],
+            [['value' => 'europe', 'label' => 'Europe', 'count' => 2], ['value' => 'global', 'label' => 'Global', 'count' => 5]],
             $body['regions'],
         );
         self::assertSame(
             [
-                ['value' => 'Action', 'label' => 'Action', 'count' => 2], ['value' => 'Puzzle', 'label' => 'Puzzle', 'count' => 1],
+                ['value' => 'Action', 'label' => 'Action', 'count' => 4], ['value' => 'Puzzle', 'label' => 'Puzzle', 'count' => 1],
                 ['value' => 'RPG', 'label' => 'RPG', 'count' => 1], ['value' => 'Strategy', 'label' => 'Strategy', 'count' => 1],
             ],
             $body['genres'],
@@ -239,10 +244,10 @@ final class CatalogTest extends DbTestCase
         $body = $this->get('/api/filters?platform[]=steam');
 
         // platforms: own filter ignored, so PlayStation is still countable next to the selected Steam
-        self::assertSame([['playstation', 2], ['steam', 3]], $this->pairs($body['platforms']));
-        // regions/genres/price: only Steam products (A global, B europe, E global)
-        self::assertSame([['europe', 1], ['global', 2]], $this->pairs($body['regions']));
-        self::assertSame([['Action', 1], ['Puzzle', 1], ['RPG', 1]], $this->pairs($body['genres']));
+        self::assertSame([['playstation', 2], ['steam', 5]], $this->pairs($body['platforms']));
+        // regions/genres/price: only Steam products (A global, B europe, E, F, G global); the price range counts buyable offers only
+        self::assertSame([['europe', 1], ['global', 4]], $this->pairs($body['regions']));
+        self::assertSame([['Action', 3], ['Puzzle', 1], ['RPG', 1]], $this->pairs($body['genres']));
         self::assertSame(['min' => 500, 'max' => 2500], $body['price']);
     }
 

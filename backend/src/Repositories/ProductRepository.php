@@ -19,10 +19,10 @@ final class ProductRepository
 {
     /**
      * Products joined with their cheapest in-stock offer (`a`, one row per product via ROW_NUMBER) plus how
-     * many in-stock offers they have. Products without a purchasable offer drop out of the catalog.
-     * The deal shown is the one on that cheapest offer, so price and discount always agree.
-     * {JOIN} is INNER for browsing (products nobody can buy drop out) and LEFT when searching, so out-of-stock
-     * products can still be found: they simply have no cheapest offer (`a` columns are NULL).
+     * many in-stock offers they have. The deal shown is the one on that cheapest offer, so price and discount agree.
+     * The join is always LEFT (browsing, filters and search alike): a product nobody can buy right now is still listed, with no
+     * cheapest offer (`a` columns are NULL, `inStock` false, no price) and last when sorting by price. Before this, browsing used an
+     * INNER join, so a database without game keys (a fresh import) showed an empty store although every product existed.
      *
      * The stock test is a scalar `(SELECT ... LIMIT 1) IS NOT NULL` on purpose: written as EXISTS, the optimizer
      * turned it into a semi-join that scanned every available key (see docs/QUERY_PLANS.md); this form is a
@@ -32,7 +32,7 @@ final class ProductRepository
         FROM products p
         JOIN platforms pl ON pl.id = p.platform_id
         JOIN regions r ON r.id = p.region_id
-        {JOIN} (
+        LEFT JOIN (
             SELECT o.product_id, o.price_cents, d.discount_pct,
                    ROW_NUMBER() OVER (PARTITION BY o.product_id ORDER BY o.price_cents, o.id) AS rn,
                    COUNT(*) OVER (PARTITION BY o.product_id) AS offer_count
@@ -61,7 +61,7 @@ final class ProductRepository
                        r.slug AS region_slug, r.name AS region_name,
                        a.price_cents AS from_price_cents, a.offer_count, a.discount_pct,
                        (a.product_id IS NOT NULL) AS in_stock '
-            . $this->baseFrom($filters)
+            . self::BASE_FROM
             . ' LEFT JOIN product_stats s ON s.product_id = p.id '
             . $where
             . ' ORDER BY ' . $order
@@ -81,7 +81,7 @@ final class ProductRepository
         $rows = array_map(self::castCardRow(...), $this->fetchAll($query['sql'], $query['params']));
 
         $params = [];
-        $countSql = 'SELECT COUNT(*) ' . $this->baseFrom($filters) . ' ' . $this->where($filters, null, $params);
+        $countSql = 'SELECT COUNT(*) ' . self::BASE_FROM . ' ' . $this->where($filters, null, $params);
         $total = (int) $this->fetchAll($countSql, $params)[0]['COUNT(*)'];
 
         return ['rows' => $rows, 'total' => $total];
@@ -104,7 +104,7 @@ final class ProductRepository
         $where = $this->where($filters, 'platform', $params);
         $platforms = $this->fetchAll(
             'SELECT pl2.slug AS value, pl2.name AS label, COUNT(base.id) AS cnt FROM platforms pl2
-             LEFT JOIN (SELECT p.id, p.platform_id ' . $this->baseFrom($filters) . ' ' . $where . ') base ON base.platform_id = pl2.id
+             LEFT JOIN (SELECT p.id, p.platform_id ' . self::BASE_FROM . ' ' . $where . ') base ON base.platform_id = pl2.id
              GROUP BY pl2.id, pl2.slug, pl2.name ORDER BY pl2.name',
             $params,
         );
@@ -113,7 +113,7 @@ final class ProductRepository
         $where = $this->where($filters, 'region', $params);
         $regions = $this->fetchAll(
             'SELECT r2.slug AS value, r2.name AS label, COUNT(base.id) AS cnt FROM regions r2
-             LEFT JOIN (SELECT p.id, p.region_id ' . $this->baseFrom($filters) . ' ' . $where . ') base ON base.region_id = r2.id
+             LEFT JOIN (SELECT p.id, p.region_id ' . self::BASE_FROM . ' ' . $where . ') base ON base.region_id = r2.id
              GROUP BY r2.id, r2.slug, r2.name ORDER BY r2.name',
             $params,
         );
@@ -121,13 +121,13 @@ final class ProductRepository
         $params = [];
         $where = $this->where($filters, 'genre', $params);
         $genres = $this->fetchAll(
-            'SELECT p.genre AS value, p.genre AS label, COUNT(*) AS cnt ' . $this->baseFrom($filters) . ' ' . $where . ' GROUP BY p.genre ORDER BY p.genre',
+            'SELECT p.genre AS value, p.genre AS label, COUNT(*) AS cnt ' . self::BASE_FROM . ' ' . $where . ' GROUP BY p.genre ORDER BY p.genre',
             $params,
         );
 
         $params = [];
         $where = $this->where($filters, 'price', $params);
-        $price = $this->fetchAll('SELECT MIN(a.price_cents) AS mn, MAX(a.price_cents) AS mx ' . $this->baseFrom($filters) . ' ' . $where, $params)[0];
+        $price = $this->fetchAll('SELECT MIN(a.price_cents) AS mn, MAX(a.price_cents) AS mx ' . self::BASE_FROM . ' ' . $where, $params)[0];
 
         return [
             'platforms' => self::options($platforms, $filters->platforms),
@@ -187,11 +187,6 @@ final class ProductRepository
             'discount_pct' => $r['discount_pct'] === null ? null : (int) $r['discount_pct'],
             'stock' => (int) $r['stock'],
         ], $rows);
-    }
-
-    private function baseFrom(ProductFilters $filters): string
-    {
-        return str_replace('{JOIN}', $filters->searchIds === null ? 'JOIN' : 'LEFT JOIN', self::BASE_FROM);
     }
 
     /**
