@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 final class DatabaseSettingsTest extends TestCase
 {
     /** @var list<string> */
-    private const VARS = ['APP_ENV', 'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS', 'MYSQL_HOST', 'MYSQL_PORT', 'MYSQL_DATABASE', 'MYSQL_USER', 'MYSQL_PASSWORD'];
+    private const VARS = ['APP_ENV', 'DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS', 'MYSQL_HOST', 'MYSQL_PORT', 'MYSQL_DATABASE', 'MYSQL_USER', 'MYSQL_PASSWORD', 'MYSQL_URL'];
 
     /** @var array<string, string|false> */
     private array $saved = [];
@@ -66,5 +66,27 @@ final class DatabaseSettingsTest extends TestCase
     {
         self::assertSame('127.0.0.1', $this->db(['APP_ENV' => 'local'])['host']);
         self::assertSame('', $this->db(['APP_ENV' => 'production'])['host'], 'production never silently falls back to localhost');
+    }
+
+    public function testRailwaysConnectionUrlConfiguresEverythingIncludingAnEscapedPassword(): void
+    {
+        $db = $this->db(['APP_ENV' => 'production', 'MYSQL_URL' => 'mysql://root:p%40ss%2Fw%3Ard@mysql.railway.internal:3306/railway']);
+
+        self::assertSame(['mysql.railway.internal', 3306, 'railway', 'root', 'p@ss/w:rd'], [$db['host'], $db['port'], $db['name'], $db['user'], $db['pass']]);
+    }
+
+    public function testIndividualVariablesStillWinOverTheUrl(): void
+    {
+        $db = $this->db(['MYSQL_URL' => 'mysql://u:p@url-host:3306/urldb', 'DB_HOST' => '127.0.0.1', 'DB_NAME' => 'localdb']);
+
+        self::assertSame(['127.0.0.1', 'localdb', 'u'], [$db['host'], $db['name'], $db['user']], 'XAMPP values can override, the rest comes from the URL');
+    }
+
+    public function testAMalformedUrlConfiguresNothing(): void
+    {
+        foreach (['not a url', 'http://evil.example/db', 'mysql:///nohost', 'mysql://user@'] as $bad) {
+            self::assertSame([], \App\Support\DatabaseUrl::parse($bad), $bad);
+        }
+        self::assertSame('', $this->db(['APP_ENV' => 'production', 'MYSQL_URL' => 'http://evil.example/db'])['host']);
     }
 }
