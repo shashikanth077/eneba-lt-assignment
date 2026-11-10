@@ -1,0 +1,91 @@
+@use '../../../styles/mixins' as *;
+
+.header {
+  background: var(--color-surface);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 72px;
+
+  @include up(md) {
+    gap: 48px;
+    min-height: 110px; // the checkout header is reduced: wordmark and progress, no search (DESIGN_TOKENS.md)
+  }
+}
+
+.logo {
+  color: inherit;
+  text-decoration: none;
+  @include focus-ring;
+}
+
+.steps {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  max-width: 760px;
+}
+
+.item {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  color: var(
+    --color-text-muted
+  ); // text on the dark bar needs 4.5:1; the muted purple is only used for the circle and the line
+
+  &:last-child {
+    flex: none;
+  }
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.active,
+.done {
+  color: var(--color-step-active);
+}
+
+.number {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: var(--color-step-inactive);
+  border-radius: 50%;
+  color: #000;
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.active .number,
+.done .number {
+  background: var(--color-step-active);
+}
+
+.line {
+  flex: 1;
+  min-width: 12px;
+  height: 1px;
+  background: var(--color-step-inactive);
+}
+
+.label {
+  display: none;
+
+  @include up(sm) {
+    display: inline;
+  }
+}

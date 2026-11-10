@@ -1,7 +1,8 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
-import { sendWelcomeEmail } from '../../services/email/emailjs';
+import { sendRegistrationEmail, sendVerificationEmail } from '../../services/email/emailService';
 import { toApiError } from '../../services/api/apiErrorHandler';
 import type { UserResponse } from '../../types/api.types';
+import type { EmailResult } from '../../services/email/emailTypes';
 import * as authService from './authService';
 import {
   bootstrapAnonymous,
@@ -15,7 +16,13 @@ import {
   registerFailure,
   registerRequest,
   registerSuccess,
+  resendVerificationFailure,
+  resendVerificationRequest,
+  resendVerificationSuccess,
   signedOut,
+  verifyEmailFailure,
+  verifyEmailRequest,
+  verifyEmailSuccess,
 } from './authSlice';
 
 function* bootstrap(): Generator {
@@ -41,11 +48,26 @@ function* register(action: ReturnType<typeof registerRequest>): Generator {
   try {
     const { user } = (yield call(authService.register, action.payload)) as UserResponse;
     yield put(registerSuccess(user));
-    // A welcome email to the account the SERVER created. sendWelcomeEmail never throws, and nothing waits for it.
-    yield call(sendWelcomeEmail, user);
+    // A welcome email to the account the SERVER created. It never throws, and nothing waits for it. (The verification e-mail is
+    // sent by the server itself during register: its link is a secret.)
+    yield call(sendRegistrationEmail, { user });
   } catch (error) {
     yield put(registerFailure(toApiError(error)));
   }
+}
+
+function* verifyEmail(action: ReturnType<typeof verifyEmailRequest>): Generator {
+  try {
+    yield call(authService.verifyEmail, action.payload);
+    yield put(verifyEmailSuccess());
+  } catch (error) {
+    yield put(verifyEmailFailure(toApiError(error)));
+  }
+}
+
+function* resendVerification(): Generator {
+  const result = (yield call(sendVerificationEmail)) as EmailResult;
+  yield put(result.status === 'sent' ? resendVerificationSuccess() : resendVerificationFailure());
 }
 
 function* logout(): Generator {
@@ -61,5 +83,7 @@ export function* authSaga(): Generator {
   yield takeLatest(bootstrapRequest.type, bootstrap);
   yield takeLatest(loginRequest.type, login as never);
   yield takeLatest(registerRequest.type, register as never);
+  yield takeLatest(verifyEmailRequest.type, verifyEmail as never);
+  yield takeLatest(resendVerificationRequest.type, resendVerification);
   yield takeLatest(logoutRequest.type, logout);
 }

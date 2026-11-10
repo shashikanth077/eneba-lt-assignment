@@ -10,6 +10,8 @@ const initialState: AuthState = {
   signingOut: false,
   login: { loading: false, error: null },
   register: { loading: false, error: null },
+  verification: { status: 'idle', error: null },
+  resend: { loading: false, sent: false, failed: false },
 };
 
 const signedIn = (state: AuthState, user: User): void => {
@@ -73,6 +75,30 @@ const authSlice = createSlice({
     /** Any request answered 401 although we thought we were signed in: the cookie expired or was revoked. */
     sessionExpired: signedOutState,
 
+    verifyEmailRequest: {
+      reducer: (state) => {
+        state.verification = { status: 'verifying', error: null };
+      },
+      prepare: (token: string) => ({ payload: token }),
+    },
+    verifyEmailSuccess: (state) => {
+      state.verification = { status: 'verified', error: null };
+      if (state.user) state.user.emailVerified = true;
+    },
+    verifyEmailFailure: (state, action: PayloadAction<SerializedApiError>) => {
+      state.verification = { status: 'failed', error: action.payload };
+    },
+
+    resendVerificationRequest: (state) => {
+      state.resend = { loading: true, sent: false, failed: false };
+    },
+    resendVerificationSuccess: (state) => {
+      state.resend = { loading: false, sent: true, failed: false };
+    },
+    resendVerificationFailure: (state) => {
+      state.resend = { loading: false, sent: false, failed: true };
+    },
+
     clearAuthErrors: (state) => {
       state.login.error = null;
       state.register.error = null;
@@ -94,6 +120,12 @@ export const {
   logoutRequest,
   signedOut,
   sessionExpired,
+  verifyEmailRequest,
+  verifyEmailSuccess,
+  verifyEmailFailure,
+  resendVerificationRequest,
+  resendVerificationSuccess,
+  resendVerificationFailure,
   clearAuthErrors,
 } = authSlice.actions;
 export const authReducer = authSlice.reducer;

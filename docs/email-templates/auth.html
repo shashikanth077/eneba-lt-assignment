@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light only">
+<title>{{email_subject}}</title>
+<!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
+<style>
+  body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+  a { color: #4718ac; }
+  @media only screen and (max-width: 620px) {
+    .container { width: 100% !important; }
+    .px { padding-left: 20px !important; padding-right: 20px !important; }
+    .h1 { font-size: 24px !important; line-height: 30px !important; }
+    .btn a { padding: 16px 20px !important; }
+    .stack { display: block !important; width: 100% !important; text-align: left !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#1f0b4f;">
+<!-- Preheader: the grey preview line in the inbox list. Hidden in the message itself. -->
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">{{email_message}}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#1f0b4f;">
+<tr><td align="center" style="padding:24px 12px;">
+<!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+<table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+  <!-- Brand -->
+  <tr><td class="px" align="left" style="background-color:#341282;padding:24px 32px 20px 32px;border-radius:12px 12px 0 0;border-bottom:4px solid #fad318;">
+    <span style="font-family:Arial,Helvetica,sans-serif;font-size:24px;line-height:28px;font-weight:bold;letter-spacing:3px;color:#ffffff;text-transform:uppercase;">{{company_name}}</span>
+    <span style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:28px;color:#b3aac9;padding-left:10px;">Digital game keys</span>
+  </td></tr>
+
+  <!-- Content -->
+  <tr><td class="px" style="background-color:#ffffff;padding:36px 32px 8px 32px;font-family:Arial,Helvetica,sans-serif;color:#1d1535;">
+    <h1 class="h1" style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:28px;line-height:34px;font-weight:bold;color:#1d1535;">{{email_heading}}</h1>
+    <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:24px;color:#1d1535;">Hi {{to_name}},</p>
+    <p style="margin:0 0 24px 0;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:24px;color:#4a4263;">{{email_message}}</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 20px 0;">
+      <tr><td class="btn" align="center" bgcolor="#4718ac" style="border-radius:999px;background-color:#4718ac;">
+        <a href="{{action_url}}" target="_blank" style="display:inline-block;padding:16px 36px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:20px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:999px;">{{action_text}}</a>
+      </td></tr>
+    </table>
+    <p style="margin:0 0 20px 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:#6b6385;">
+      Button not working? Copy this link into your browser:<br>
+      <a href="{{action_url}}" target="_blank" style="color:#4718ac;word-break:break-all;">{{action_url}}</a>
+    </p>
+    {{#expiry_message}}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px 0;">
+      <tr><td style="background-color:#f4f0ff;border-left:4px solid #4718ac;padding:12px 16px;border-radius:4px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:21px;color:#1d1535;">
+        This verification link expires in <strong>{{expiry_message}}</strong>. If it has expired, sign in and request a new one.
+      </td></tr>
+    </table>
+    {{/expiry_message}}
+    <p style="margin:0 0 16px 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:20px;color:#6b6385;">If you did not create an account, you can safely ignore this email.</p>
+
+  </td></tr>
+
+  <!-- Support -->
+  <tr><td class="px" style="background-color:#ffffff;padding:8px 32px 32px 32px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:22px;color:#4a4263;">
+    <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #e6e1f2;">
+      <tr><td style="padding-top:20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:22px;color:#4a4263;">
+        Questions? Reply to this email or write to <a href="mailto:{{support_email}}" style="color:#4718ac;font-weight:bold;">{{support_email}}</a>. We are happy to help.
+      </td></tr>
+    </table>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td class="px" align="center" style="background-color:#341282;padding:20px 32px;border-radius:0 0 12px 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:18px;color:#b3aac9;">
+    &copy; {{current_year}} {{company_name}}. All rights reserved.<br>
+    You received this email because of activity on your {{company_name}} account ({{to_email}}).
+  </td></tr>
+
+</table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td></tr>
+</table>
+</body>
+</html>

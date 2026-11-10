@@ -1,0 +1,18 @@
+{
+  "to_name": "Ada",
+  "to_email": "ada@example.com",
+  "order_number": "1042",
+  "order_date": "2 January 2026",
+  "order_items": "<tr><td style=\"padding:12px 0;border-bottom:1px solid #e6e1f2;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1d1535;\">Tides of Stormhaven<br><span style=\"font-size:12px;color:#6b6385;\">Sold by GameNest · Qty 2</span></td><td align=\"right\" style=\"padding:12px 0;border-bottom:1px solid #e6e1f2;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1d1535;white-space:nowrap;font-weight:bold;\">€29.98</td></tr><tr><td style=\"padding:12px 0;border-bottom:1px solid #e6e1f2;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1d1535;\">Alpha &lt;b&gt;Quest&lt;/b&gt; &amp; Co<br><span style=\"font-size:12px;color:#6b6385;\">Sold by Nova Keys · Qty 1</span></td><td align=\"right\" style=\"padding:12px 0;border-bottom:1px solid #e6e1f2;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1d1535;white-space:nowrap;font-weight:bold;\">€14.99</td></tr>",
+  "subtotal": "€44.97",
+  "discount": "€5.00",
+  "total_amount": "€39.97",
+  "currency": "EUR",
+  "payment_method": "Card (Stripe)",
+  "payment_status": "Paid",
+  "order_status": "Confirmed",
+  "order_details_url": "https://keymart.example/orders/1042",
+  "company_name": "KEYMART",
+  "support_email": "support@keymart.example",
+  "current_year": "2026"
+}

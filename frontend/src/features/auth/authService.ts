@@ -12,6 +12,10 @@ export const login = async (credentials: Credentials): Promise<UserResponse> =>
 export const register = async (data: RegistrationData): Promise<UserResponse> =>
   (await apiClient.post<UserResponse>(endpoints.register, data)).data;
 
+export const verifyEmail = async (token: string): Promise<void> => {
+  await apiClient.post(endpoints.verifyEmail, { token });
+};
+
 export const logout = async (): Promise<void> => {
   await apiClient.post(endpoints.logout);
 };

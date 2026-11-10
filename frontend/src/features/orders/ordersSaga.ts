@@ -1,6 +1,6 @@
 import { all, call, delay, put, race, select, take, takeLatest } from 'redux-saga/effects';
 import type { RootState } from '../../app/store';
-import { sendOrderReceipt } from '../../services/email/emailjs';
+import { sendOrderConfirmationEmail } from '../../services/email/emailService';
 import { takeReceiptDue } from '../../services/email/receiptFlag';
 import { toApiError } from '../../services/api/apiErrorHandler';
 import type { OrderDetail, User } from '../../types/api.types';
@@ -38,7 +38,7 @@ function* afterPaid(order: OrderDetail): Generator {
   yield put(invalidateOrdersList());
   const user = (yield select(selectUser)) as User | null;
   if (user && takeReceiptDue(order.id)) {
-    yield call(sendOrderReceipt, order, user); // never throws
+    yield call(sendOrderConfirmationEmail, { order, user }); // never throws
   }
 }
 

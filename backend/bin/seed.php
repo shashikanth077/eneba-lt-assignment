@@ -14,6 +14,10 @@ if (in_array('--create-db', $argv, true) && App\Support\DatabaseBootstrap::ensur
 $pdo = $container->get(PDO::class);
 
 (new Migrator($pdo, dirname(__DIR__) . '/database/migrations'))->run(); // make sure the schema exists
+if (in_array('--if-empty', $argv, true) && (int) $pdo->query('SELECT COUNT(*) FROM products')->fetchColumn() > 0) {
+    echo "Catalogue already loaded, seeding skipped (--if-empty).\n";
+    exit(0);
+}
 $started = microtime(true);
 $counts = (new DatabaseSeeder($pdo, $container->get(KeyCipher::class)))->run();
 

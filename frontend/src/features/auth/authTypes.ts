@@ -25,6 +25,13 @@ export interface AuthState {
   signingOut: boolean;
   login: FormRequestState;
   register: FormRequestState;
+  /** Opening the link from the verification e-mail (/verify-email?token=...). */
+  verification: {
+    status: 'idle' | 'verifying' | 'verified' | 'failed';
+    error: SerializedApiError | null;
+  };
+  /** "Send me a new link" from the banner. */
+  resend: { loading: boolean; sent: boolean; failed: boolean };
 }
 
 export interface Credentials {

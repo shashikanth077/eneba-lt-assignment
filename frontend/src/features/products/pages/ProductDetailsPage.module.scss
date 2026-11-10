@@ -2,17 +2,27 @@
 
 .page {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 40px;
 }
 
 .top {
   display: grid;
+  grid-template-columns: minmax(
+    0,
+    1fr
+  ); // a grid column may shrink below its content (a long word must not widen the page)
   gap: 24px;
   align-items: start;
 
   @include up(md) {
     grid-template-columns: 320px minmax(0, 1fr);
     gap: 32px;
+  }
+
+  // details | buy box: the buy box takes the third column once there is room for it
+  @include up(lg) {
+    grid-template-columns: 320px minmax(0, 1fr) 340px;
   }
 }
 

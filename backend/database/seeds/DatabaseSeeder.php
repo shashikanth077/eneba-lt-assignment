@@ -26,6 +26,12 @@ final class DatabaseSeeder
     {
     }
 
+    /** Two ready-to-use accounts for reviewers (docs/EMAIL.md). Public on purpose: they hold no money and no keys. */
+    public const DEMO_USERS = [
+        ['demo.buyer@keymart.test', 'Demo Buyer', 'Demo-Buyer-2027'],
+        ['demo.shopper@keymart.test', 'Demo Shopper', 'Demo-Shopper-2027'],
+    ];
+
     /** @return array<string, int> row counts per table */
     public function run(): array
     {
@@ -38,6 +44,7 @@ final class DatabaseSeeder
             $this->seedOffersKeysDealsStats($products, array_values($sellerIds));
             $this->seedBanners();
             $this->seedHomeBlocks();
+            $this->seedDemoUsers();
             $this->pdo->commit();
         } catch (\Throwable $e) {
             $this->pdo->rollBack();
@@ -324,6 +331,19 @@ final class DatabaseSeeder
             $sql = $prefix . ' (' . implode(',', $columns) . ') VALUES '
                 . implode(',', array_fill(0, count($batch), $placeholders)) . $suffix;
             $this->pdo->prepare($sql)->execute(array_merge(...$batch));
+        }
+    }
+
+    /** Created once (an existing account keeps its password and orders) and already verified, so the verification banner does not show. */
+    private function seedDemoUsers(): void
+    {
+        $exists = $this->pdo->prepare('SELECT 1 FROM users WHERE email = ?');
+        $insert = $this->pdo->prepare('INSERT INTO users (email, password_hash, display_name, email_verified_at) VALUES (?, ?, ?, NOW())');
+        foreach (self::DEMO_USERS as [$email, $name, $password]) {
+            $exists->execute([$email]);
+            if ($exists->fetchColumn() === false) {
+                $insert->execute([$email, password_hash($password, PASSWORD_ARGON2ID), $name]);
+            }
         }
     }
 }

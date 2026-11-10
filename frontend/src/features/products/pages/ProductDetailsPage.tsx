@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../app/hooks';
-import { Button, PriceDisplay, Skeleton } from '../../../components/common';
+import { Button, Skeleton } from '../../../components/common';
 import { EmptyState } from '../../../components/feedback/EmptyState';
 import { ErrorMessage } from '../../../components/feedback/ErrorMessage';
 import type { ProductResponse } from '../../../types/api.types';
 import { classNames } from '../../../utils/classNames';
+import { Breadcrumbs } from '../components/Breadcrumbs';
+import { BuyBox } from '../components/BuyBox';
 import { OfferTable } from '../components/OfferTable';
+import { isBuyable } from '../offers';
 import { selectProductEntry } from '../productsSelectors';
 import { fetchProductRequest } from '../productsSlice';
 import styles from './ProductDetailsPage.module.scss';
@@ -26,11 +29,24 @@ function ProductSkeleton() {
 
 function ProductDetails({ data }: { data: ProductResponse }) {
   const { product, offers } = data;
-  const buyable = offers.filter((offer) => offer.stock > 0).map((offer) => offer.priceCents);
-  const from = buyable.length > 0 ? Math.min(...buyable) : null;
+  const buyable = offers.filter(isBuyable);
+  const cheapest =
+    buyable.length > 0
+      ? buyable.reduce((best, offer) => (offer.priceCents < best.priceCents ? offer : best))
+      : null;
 
   return (
     <div className={styles.page}>
+      <Breadcrumbs
+        crumbs={[
+          { label: 'Store', to: '/store' },
+          {
+            label: product.platform.name,
+            to: `/store?platform=${encodeURIComponent(product.platform.slug)}`,
+          },
+          { label: product.name },
+        ]}
+      />
       <div className={styles.top}>
         <img src={product.coverUrl} alt={`Cover of ${product.name}`} className={styles.cover} />
         <div className={styles.info}>
@@ -50,12 +66,8 @@ function ProductDetails({ data }: { data: ProductResponse }) {
             {product.publisher} · Released {product.releaseDate}
           </p>
           <p>{product.description}</p>
-          {from === null ? (
-            <p className={styles.soldOut}>Out of stock</p>
-          ) : (
-            <PriceDisplay from cents={from} size="lg" />
-          )}
         </div>
+        <BuyBox cheapest={cheapest} offerCount={buyable.length} />
       </div>
 
       <section aria-labelledby="offers-heading">

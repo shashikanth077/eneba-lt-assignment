@@ -18,7 +18,7 @@ beforeEach(() => {
   send.mockClear();
   vi.stubEnv('VITE_EMAILJS_SERVICE_ID', 'svc');
   vi.stubEnv('VITE_EMAILJS_PUBLIC_KEY', 'pub');
-  vi.stubEnv('VITE_EMAILJS_WELCOME_TEMPLATE_ID', 'tpl_welcome');
+  vi.stubEnv('VITE_EMAILJS_AUTH_TEMPLATE_ID', 'tpl_auth');
   vi.stubEnv('VITE_EMAILJS_ORDER_TEMPLATE_ID', 'tpl_order');
 });
 
@@ -100,8 +100,14 @@ describe('register form', () => {
     await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
     expect(send).toHaveBeenCalledWith(
       'svc',
-      'tpl_welcome',
-      { to_email: 'ada@example.com', to_name: 'Ada' },
+      'tpl_auth',
+      expect.objectContaining({
+        to_email: 'ada@example.com',
+        to_name: 'Ada',
+        email_heading: 'Welcome aboard, Ada!',
+        action_text: 'Explore Marketplace',
+        expiry_message: '',
+      }),
       { publicKey: 'pub' },
     );
     expect(api.callsTo('/api/auth/register')).toHaveLength(1);

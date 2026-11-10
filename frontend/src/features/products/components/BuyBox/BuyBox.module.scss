@@ -1,0 +1,33 @@
+.box {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+}
+
+.heading {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+}
+
+.offers {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+}
+
+.sold {
+  font-size: var(--font-size-card-price);
+  font-weight: 800;
+  color: var(--color-text-secondary);
+}
+
+.note {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.error {
+  color: #ff9db5;
+  font-size: 0.875rem;
+}

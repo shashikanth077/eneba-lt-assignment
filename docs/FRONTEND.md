@@ -94,14 +94,16 @@ with `aria-sort`, rating as `role="img"` text, "Best price" as a chip + border (
   hidden behind "Reveal key" (Hide, Copy with a clipboard fallback message); they are not in the list, URL, storage or e-mails, and leaving the page dispatches `leaveOrder`, which removes them from the store. Someone else's order is "not found".
 - **When an order becomes paid** the saga refreshes the cart (bought lines left it), invalidates the orders list and sends the receipt e-mail once.
 
-## E-mails (EmailJS, browser, public key; docs/ARCHITECTURE.md)
-A welcome e-mail after registration (to the address the *server* stored) and a receipt when an order this browser paid for becomes paid. Params are copied field by field (`to_email, to_name, order_id, order_items, order_total`) so a key cannot be
-included; "this browser paid" is a localStorage flag set when Pay is pressed and consumed once. Not configured or failing: skipped silently. Limits and the O1 abuse risk are in docs/REVIEW.md.
+## E-mails (EmailJS; docs/EMAIL.md)
+Central service `services/email/` (`emailConfig`, `emailTypes`, `emailHelpers`, `emailService`) with three functions: `sendRegistrationEmail` and `sendVerificationEmail` share the AUTH template, `sendOrderConfirmationEmail` uses the ORDER template. The verification link is created and mailed by the **API** (it is a secret); the browser only asks for a new one. The order e-mail goes out when the server reports the order paid ("this browser paid" is a localStorage flag set when Pay is pressed and consumed once). Values are validated and HTML-escaped; no key can be included. Not configured or failing: skipped, with a result instead of an exception. `/verify-email` page and a banner for unverified accounts live in `features/auth`. Full description, EmailJS dashboard steps, demo accounts and the test checklist: docs/EMAIL.md. Limits and the O1 abuse risk are in docs/REVIEW.md.
 Config (`frontend/.env`): `VITE_STRIPE_PUBLISHABLE_KEY`, `VITE_EMAILJS_*`, optional `VITE_API_BASE_URL`; backend keeps `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` (run `stripe listen --forward-to localhost:8080/api/webhooks/stripe`).
 
 ## Styling
 SCSS modules per component (`X.module.scss`), design tokens as SCSS variables and CSS custom properties (`styles/`), breakpoints via `@include up(md)`, a shared focus ring, `prefers-reduced-motion` respected. The only place JS needs colours is Stripe's
 iframe (`utils/constants.ts`). Placeholder text uses `#c4aaf0` (4.5:1) instead of the measured `#ad8fe4` (3.9:1).
+
+### Visual parity pass (P17)
+Sizes come from tokens in `styles/variables.scss` (mirrored as CSS custom properties in `global.scss`): header 128, nav 64, search 660 x 76, checkout column 960, a type scale (`$font-size-nav/search/card-title/card-meta/card-price/section-title/total`) and `--color-auth-page`, `--color-region-pink`, `--color-step-*`, `--input-bg`. Mixins: `full-bleed` (hero spans the viewport; `body` uses `overflow-x: clip`) and `container-inset()` (content still lines up with the container). New components: `CheckoutHeader` (wordmark + 3-step progress, used with a compact footer on `/cart`, `/checkout`, `/payment*`), `Breadcrumbs`, `BuyBox` (cheapest offer + add to cart, shares `useAddOffer` with the offer table). Grids that hold tables use `minmax(0, 1fr)` so they cannot widen the page. Evidence and the list of differences: `docs/screens/DIFFERENCES.md`; capture with `frontend/e2e/screens.e2e.cjs`, compose with `scripts/compare_screens.py`.
 
 ## Accessibility
 axe-core (WCAG 2.0-2.2 A/AA) finds **no violations** on home, store (plain and filtered), search, product, login, register, cart, checkout and orders. Dialogs trap focus and return it; menus and the search combobox follow the ARIA patterns
@@ -119,5 +121,12 @@ SQL_CMD="mysql -uroot keymart" NODE_PATH=$(npm root -g) node e2e/home.e2e.cjs   
 SQL_CMD="mysql -uroot keymart" NODE_PATH=$(npm root -g) node e2e/product.e2e.cjs    # 21 checks
 NODE_PATH=$(npm root -g) node e2e/commerce.e2e.cjs                                  # 28 checks: sign-up, cart, pending order -> signed webhook -> keys
 ```
+```bash
+cd frontend && npx playwright install chromium && npm run test:e2e   # one @playwright/test spec: e2e/purchase.spec.ts
+```
+`playwright.config.ts` starts the PHP API (:8080, no Stripe key, webhook secret `whsec_e2e`) and Vite (:5173) itself and reuses them when they already run; the database must exist (`php bin/setup.php`). The spec walks register -> two offers from different sellers -> cart edits (total equals the server's) -> checkout -> pending order -> signed webhook -> keys appear without reload -> reveal/copy -> order history. Stripe's card form is the one step it cannot run (needs a Stripe account); the spec plays Stripe's part with a signed webhook and creates the pending order through the API's fake gateway (`backend/tests/bin/dev_order.php`). The older `e2e/*.e2e.cjs` scripts stay as wider manual checks; only `purchase.spec.ts` runs in CI.
+
+**CI** (`.github/workflows/ci.yml`, on every push): `backend` (PHPUnit against a MySQL 8 service, skipped tests fail the job), `frontend` (prettier, eslint, Vitest, `tsc -b && vite build`), then `e2e` (Playwright; failure uploads the trace).
+
 Component and page tests run the real routes, store and sagas against an in-memory replacement of `fetch` (`src/test/fakeApi.ts`), so the Axios client is exercised too. Use `http://localhost:5173` (not 127.0.0.1): the backend's CSRF
 origin list names `localhost`. The real card payment (Stripe.js + a Stripe account) cannot run in the development sandbox: the tests use stand-ins for `@stripe/*` and the browser script plays Stripe's part with a signed webhook.

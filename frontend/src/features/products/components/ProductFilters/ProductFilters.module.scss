@@ -1,17 +1,26 @@
 .filters {
   display: flex;
   flex-direction: column;
-  gap: 24px;
 }
 
 .group {
   display: grid;
   gap: 8px;
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18); // thin separators between groups, as in the reference
+
+  &:first-child {
+    padding-top: 4px;
+  }
+
+  &:last-child {
+    border-bottom: 0;
+  }
 }
 
 .legend {
   margin-bottom: 8px;
-  font-size: 1rem;
+  font-size: 1.125rem;
   font-weight: 700;
 }
 

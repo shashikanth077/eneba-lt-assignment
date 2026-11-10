@@ -72,6 +72,10 @@ return static function (App $app): void {
             $auth->post('/register', [AuthController::class, 'register'])->add($limit('register', $limits['register_per_hour_per_ip'], 3600));
             $auth->post('/login', [AuthController::class, 'login']);
             $auth->post('/logout', [AuthController::class, 'logout']);
+            $auth->post('/verify-email', [AuthController::class, 'verifyEmail']);
+            $auth->post('/resend-verification', [AuthController::class, 'resendVerification'])
+                ->add($limit('resend_verification', $limits['resend_verification_per_hour'], 3600, true))
+                ->add(AuthMiddleware::class);
             $auth->get('/me', [AuthController::class, 'me'])->add(AuthMiddleware::class);
         });
     });

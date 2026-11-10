@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  min-height: 48px;
+  min-height: 52px;
   overflow-x: auto;
   white-space: nowrap;
   scrollbar-width: none;
@@ -18,7 +18,7 @@
   }
 
   @include up(md) {
-    min-height: 60px;
+    min-height: var(--nav-height);
     gap: 8px;
   }
 }
@@ -33,12 +33,16 @@
   padding: 0 16px;
   background: transparent;
   border: 0;
-  border-bottom: 3px solid transparent;
   color: inherit;
+  font-size: var(--font-size-nav);
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
   @include focus-ring;
+
+  &:hover:not(:disabled) {
+    color: var(--color-yellow);
+  }
 
   &:disabled {
     opacity: 0.5;
@@ -47,7 +51,7 @@
 }
 
 .current {
-  border-bottom-color: var(--color-yellow);
+  color: var(--color-yellow);
 }
 
 .skeleton {

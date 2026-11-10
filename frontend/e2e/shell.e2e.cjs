@@ -185,6 +185,7 @@ async function suggestionsFor(page, text) {
   check(true, 'logging in sends you back to /cart');
 
   // ---- no open redirect -----------------------------------------------------------------------------
+  await page.goto(BASE + '/'); // the cart page uses the reduced checkout header, which has no account menu
   await page.getByRole('button', { name: /Account menu/ }).click();
   await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await page.waitForURL(`${BASE}/`);

@@ -17,7 +17,7 @@ The reference is **dark / purple**, so the app is built on a dark purple page co
 | Token | Hex | Used for | Basis |
 |---|---|---|---|
 | `page` | `#4718ac` | page + header background | Measured |
-| `navBar` | `#341282` | category nav strip (60 px) | Measured |
+| `navBar` | `#341282` | category nav strip (64 px, P17) | Measured |
 | `surface` | `#351183` | checkout header, cart/summary panels | Measured |
 | `surfaceInset` | `#2f0f73` | cart item row inside a panel | Measured |
 | `surfaceInput` | `#2a0e69` | text inputs in checkout panels | Measured |
@@ -55,8 +55,8 @@ MUI mapping: `primary` = yellow (black text), `secondary` = blue (white text), `
 ## 3. Spacing and layout
 - Spacing base **8 px** (MUI `spacing: 8`). Estimated; gaps measured at 24-25 px fit a 3 x 8 grid.
 - Container max width **1440 px**, centred (229 -> 1669 px at 1893 px viewport). Measured.
-- Header **108 px** + category nav **60 px**; checkout header 110 px. Measured.
-- Search input **660 x 68 px**, 1 px white-ish border, sharp corners. Measured.
+- Header **128 px** + category nav **64 px** (P17, re-measured on the screen recording; earlier screenshots gave 108/60); checkout header 110 px. Layout sizes live in `styles/variables.scss` (`$layout-*`) and as CSS custom properties.
+- Search input **660 x 76 px** (P17; 68 earlier), 1 px white-ish border, sharp corners. Measured.
 - Filter sidebar **264 px** wide, gap to results **24 px**. Measured.
 - Product card **267 px** wide, gap **24 px**, 5 per row at 1440. Measured.
 - Hero banner **379 px** tall, full-bleed: one wide main slide + 3 narrow promo tiles (~190 px each). Measured.
@@ -71,8 +71,8 @@ MUI mapping: `primary` = yellow (black text), `secondary` = blue (white text), `
 
 ## 5. Structure
 
-**Header** (108 px, `page` bg): left wordmark -> centred-left search (660 px) -> locale ("Lietuvių | AED") ->
-heart/wishlist -> cart (with red count bubble) -> "Sign in | Register". Below it a **nav strip** (60 px,
+**Header** (128 px, `page` bg): left wordmark -> centred-left search (660 px) -> locale ("Lietuvių | AED") ->
+heart/wishlist -> cart (with red count bubble) -> "Sign in | Register". Below it a **nav strip** (64 px,
 `navBar` bg): hamburger "Categories" + text links (cheap games, software, gift cards, top-ups, promos).
 **Checkout header** is reduced: wordmark + 3-step stepper (Cart / Payment / Receive item) + locale; no search.
 

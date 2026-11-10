@@ -56,6 +56,12 @@ export const routes: RouteObject[] = [
         }),
       },
       {
+        path: 'verify-email',
+        lazy: async () => ({
+          Component: (await import('../features/auth/pages/VerifyEmailPage')).VerifyEmailPage,
+        }),
+      },
+      {
         // everything below needs a signed-in user: signed-out visitors are sent to /login?next=<this page> and back
         element: <ProtectedRoute />,
         children: [

@@ -2,7 +2,8 @@
 
 .container {
   width: 100%;
-  max-width: $layout-container-max;
+  // the content column is 1440 wide (DESIGN_TOKENS.md); the side padding sits outside it
+  max-width: $layout-container-max + 48px;
   margin: 0 auto;
   padding-left: 16px;
   padding-right: 16px;

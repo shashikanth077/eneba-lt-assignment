@@ -1,0 +1,13 @@
+{
+  "to_name": "Ada",
+  "to_email": "ada@example.com",
+  "email_subject": "Welcome to KEYMART – Your account is ready!",
+  "email_heading": "Welcome aboard, Ada!",
+  "email_message": "Thank you for creating an account with KEYMART. We're excited to have you with us. Explore our marketplace and discover great digital products and deals.",
+  "action_text": "Explore Marketplace",
+  "action_url": "https://keymart.example/",
+  "expiry_message": "",
+  "company_name": "KEYMART",
+  "support_email": "support@keymart.example",
+  "current_year": "2026"
+}

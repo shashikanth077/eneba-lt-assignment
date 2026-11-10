@@ -40,13 +40,24 @@ Needs PHP 8.2+ (with `pdo_mysql`), Composer, MySQL 8 or MariaDB 10.4+ (XAMPP wor
 ```bash
 # backend
 cd backend && cp .env.example .env && composer install   # XAMPP: copy .env.xampp.example instead
-php bin/setup.php     # creates the database if missing, migrates, loads demo data
+php bin/setup.php     # creates the database if missing, migrates, loads demo data (and two demo accounts, below)
 php bin/doctor.php    # checks PHP, extensions, secrets, database, migrations and says what to fix
 php -S localhost:8080 -t public public/index.php
 
 # frontend (second terminal)
 cd frontend && cp .env.example .env && npm install && npm run dev
 ```
+
+Deploying (Vercel + Render + a free MySQL host): **docs/DEPLOY.md**.
+
+## Demo accounts
+
+Created by `php bin/setup.php` / `php bin/seed.php` (already e-mail verified). Public on purpose: no money, no keys. Details in docs/EMAIL.md.
+
+| Email | Password |
+|---|---|
+| `demo.buyer@keymart.test` | `Demo-Buyer-2027` |
+| `demo.shopper@keymart.test` | `Demo-Shopper-2027` |
 
 ## Database, demo data and tests
 ```bash
@@ -71,7 +82,7 @@ banners are generated SVGs served from `/api/images/products/{slug}.svg` and `/a
 |---|---|---|
 | `backend/.env` (or root `.env` for Docker) | `STRIPE_SECRET_KEY=sk_test_...`, `STRIPE_WEBHOOK_SECRET=whsec_...` | creating the payment, verifying Stripe's webhook |
 | `frontend/.env` (or root `.env` for Docker) | `VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...` | Stripe's Payment Element in the browser (test keys only) |
-| `frontend/.env` | `VITE_EMAILJS_SERVICE_ID`, `VITE_EMAILJS_PUBLIC_KEY`, `VITE_EMAILJS_WELCOME_TEMPLATE_ID`, `VITE_EMAILJS_ORDER_TEMPLATE_ID` | welcome email and key-less order receipt (optional) |
+| `frontend/.env` | `VITE_EMAILJS_SERVICE_ID`, `VITE_EMAILJS_PUBLIC_KEY`, `VITE_EMAILJS_AUTH_TEMPLATE_ID`, `VITE_EMAILJS_ORDER_TEMPLATE_ID` | welcome email and key-less order confirmation (optional; two templates, see docs/EMAIL.md) |
 
 Locally also run `stripe listen --forward-to localhost:8080/api/webhooks/stripe` (it prints the `whsec_...`), then buy with card `4242 4242 4242 4242`, any future date, any CVC. Details: [docs/FRONTEND.md](docs/FRONTEND.md), [docs/CHECKOUT.md](docs/CHECKOUT.md).
 

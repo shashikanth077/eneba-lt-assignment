@@ -3,18 +3,48 @@
 .label {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 32px;
+  gap: 12px;
+  min-height: 40px;
+  font-size: 1.0625rem;
   cursor: pointer;
 }
 
 .box {
-  width: 22px;
-  height: 22px;
+  appearance: none;
+  display: grid;
+  place-content: center;
+  width: 24px;
+  height: 24px;
   margin: 0;
-  accent-color: var(--color-yellow);
+  background: transparent;
+  border: 2px solid var(--color-text-secondary);
+  border-radius: var(--radius);
   cursor: pointer;
   flex: none;
+
+  &::after {
+    content: '';
+    width: 6px;
+    height: 12px;
+    margin-top: -2px;
+    border: solid #000;
+    border-width: 0 3px 3px 0;
+    transform: rotate(45deg) scale(0);
+  }
+
+  &:checked {
+    background: var(--color-yellow);
+    border-color: var(--color-yellow);
+
+    &::after {
+      transform: rotate(45deg) scale(1);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-yellow);
+    outline-offset: 2px;
+  }
 }
 
 .text {

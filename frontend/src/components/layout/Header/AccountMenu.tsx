@@ -1,7 +1,7 @@
 import { LogOut, Receipt, ShoppingCart, User as UserIcon } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../app/hooks';
-import { Button, Menu, MenuDivider, MenuHeader, MenuItem, Skeleton } from '../../common';
+import { Menu, MenuDivider, MenuHeader, MenuItem, Skeleton } from '../../common';
 import { logoutRequest, selectAuth } from '../../../features/auth/authSlice';
 import { loginUrl } from '../../../utils/redirect';
 import styles from './Header.module.scss';
@@ -23,15 +23,13 @@ export function AccountMenu() {
         <Link to={signIn} className={`${styles.iconLink} ${styles.onlySmall}`} aria-label="Sign in">
           <UserIcon aria-hidden />
         </Link>
-        <span className={styles.fromSm}>
-          <Button to={signIn} variant="text">
+        <span className={styles.authLinks}>
+          <Link to={signIn}>
+            <UserIcon size={22} aria-hidden style={{ marginRight: 8 }} />
             Sign in
-          </Button>
-        </span>
-        <span className={styles.fromSm}>
-          <Button to="/register" size="sm">
-            Register
-          </Button>
+          </Link>
+          <span className={styles.divider} aria-hidden="true" />
+          <Link to="/register">Register</Link>
         </span>
       </div>
     );

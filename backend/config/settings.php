@@ -18,6 +18,11 @@ return static function (): array {
             'name' => $env('DB_NAME', 'keymart'),
             'user' => $env('DB_USER', 'keymart'),
             'pass' => $env('DB_PASS', ''),
+            // Managed MySQL hosts require TLS. DB_SSL=true turns it on and verifies the server certificate against DB_SSL_CA (a file path,
+            // for hosts with their own CA) or, when that is empty, the system's CA bundle. DB_SSL_VERIFY=false skips verification (weaker).
+            'ssl' => filter_var($env('DB_SSL', 'false'), FILTER_VALIDATE_BOOLEAN),
+            'ssl_ca' => $env('DB_SSL_CA'),
+            'ssl_verify' => filter_var($env('DB_SSL_VERIFY', 'true'), FILTER_VALIDATE_BOOLEAN),
             'lock_strategy' => $env('LOCK_STRATEGY', 'auto'), // auto | skip | wait (see App\Support\LockStrategy)
         ],
         // Only needed when the API is NOT at the root of its host, e.g. XAMPP's http://localhost/keymart/backend/public
@@ -38,6 +43,16 @@ return static function (): array {
             'webhook_secret' => $env('STRIPE_WEBHOOK_SECRET'),    // whsec_... (from `stripe listen` or the dashboard endpoint)
             'webhook_tolerance' => (int) $env('STRIPE_WEBHOOK_TOLERANCE', '300'),
         ],
+        // E-mail through EmailJS (docs/EMAIL.md). Empty service/template/keys = e-mails are skipped, the app works the same.
+        'mail' => [
+            'service_id' => $env('EMAILJS_SERVICE_ID'),
+            'auth_template_id' => $env('EMAILJS_AUTH_TEMPLATE_ID'),
+            'public_key' => $env('EMAILJS_PUBLIC_KEY'),
+            'private_key' => $env('EMAILJS_PRIVATE_KEY'), // server only, never sent to the browser
+            'company_name' => $env('MAIL_COMPANY_NAME', 'KEYMART'),
+            'support_email' => $env('SUPPORT_EMAIL', 'support@keymart.example'),
+            'verification_ttl_hours' => (int) $env('EMAIL_VERIFICATION_TTL_HOURS', '24'),
+        ],
         'checkout' => [
             'currency' => strtolower($env('CHECKOUT_CURRENCY', 'eur')),
             'reservation_minutes' => (int) $env('RESERVATION_MINUTES', '15'),
@@ -48,6 +63,7 @@ return static function (): array {
             'register_per_hour_per_ip' => (int) $env('RATE_LIMIT_REGISTER_PER_HOUR', '10'),
             'checkout_per_10min_per_user' => (int) $env('RATE_LIMIT_CHECKOUT_PER_10MIN', '10'),
             'search_per_minute_per_ip' => (int) $env('RATE_LIMIT_SEARCH_PER_MINUTE', '240'),
+            'resend_verification_per_hour' => (int) $env('RATE_LIMIT_RESEND_VERIFICATION_PER_HOUR', '5'),
         ],
         'cache' => [
             'driver' => $env('CACHE_DRIVER', 'file'), // file | none
