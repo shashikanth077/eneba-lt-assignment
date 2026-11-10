@@ -46,6 +46,8 @@ Step 5 below creates them with your own key.
 **Regenerating it** (after a new migration): create a scratch database, run `DB_NAME=scratch php bin/setup.php`, then rebuild the file the way its header describes:
 the migrations in order, the ledger, then `mysqldump --no-create-info --complete-insert` of `platforms regions sellers products offers deals product_stats banners home_blocks users`.
 
+> **Browsing does not depend on stock (P25).** `/api/products` and `/api/filters` list every product even before keys exist: cards show "Out of stock" without a price. The homepage rails *Deals*, *Best sellers* and *New releases* still show only buyable offers (a deal on something nobody can buy would be misleading), so they stay empty until step 5 creates the keys.
+
 ## 4. Railway: create, expose, import
 
 1. Railway > *New Project* > *Provision MySQL* (or *Database > MySQL*).
@@ -64,7 +66,8 @@ the migrations in order, the ledger, then `mysqldump --no-create-info --complete
    KEY_ENCRYPTION_KEY='<your key>' JWT_SECRET=x APP_ENV=local php bin/seed.php
    ```
    (`APP_ENV=local` here only silences the production safety check for this one command; nothing is served.) Expect `game_keys` about 14,000.
-   Alternatively set `SEED_ON_START=always` for one deploy of the container and then remove it.
+   **Easiest:** set `SEED_ON_START=if-empty` on the backend service and redeploy. Since P24 "empty" means *no game keys at all*, so a database imported from this file gets its keys
+   at the first start, encrypted with the service's own `KEY_ENCRYPTION_KEY`; later starts skip it. `GET /api/health` shows `"stock":"empty"` until keys exist and `"stock":"ok"` afterwards.
 
 ## 5. Vercel
 

@@ -143,12 +143,16 @@ final class SearchTest extends DbTestCase
         self::assertIsInt($cyberpunk['fromPriceCents']);
     }
 
-    public function testBrowsingWithoutAQueryStillHidesOutOfStockProducts(): void
+    public function testBrowsingWithoutAQueryListsOutOfStockProductsToo(): void
     {
-        $names = array_column($this->get('/api/products?pageSize=48')['items'], 'name');
+        $items = $this->get('/api/products?pageSize=48')['items'];
+        $names = array_column($items, 'name');
 
-        self::assertNotContains(self::SILKSONG, $names);
+        self::assertContains(self::SILKSONG, $names, 'the catalog does not depend on stock');
         self::assertContains(self::WITCHER, $names);
+        $silksong = $items[array_search(self::SILKSONG, $names, true)];
+        self::assertFalse($silksong['inStock']);
+        self::assertNull($silksong['fromPriceCents']);
     }
 
     public function testOutOfStockResultsSortLastWhenSortingByPrice(): void
