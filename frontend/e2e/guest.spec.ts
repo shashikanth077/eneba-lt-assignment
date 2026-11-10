@@ -59,6 +59,42 @@ test('a guest fills a cart, keeps it over a refresh, registers at checkout and f
   });
 });
 
+test('the cart icon opens the cart panel with the items, View cart and Checkout now', async ({
+  page,
+}) => {
+  await page.goto('/product/cobalt-wilds-steam-global');
+  await page
+    .getByRole('button', { name: /Add to cart, offer from/ })
+    .first()
+    .click();
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Cart, 1 items' })).toBeVisible();
+
+  await page.getByRole('banner').getByRole('link', { name: 'Cart, 1 items' }).click();
+  const panel = page.getByRole('dialog', { name: 'My shopping cart' });
+  await expect(panel).toBeVisible();
+  const box = await panel.boundingBox();
+  expect(box?.x ?? 0).toBeGreaterThan(300); // it slides in from the right edge
+  await expect(panel.getByRole('list', { name: 'Cart items' }).locator('li')).toHaveCount(1);
+  await expect(panel.getByText('Cobalt Wilds')).toBeVisible();
+  await expect(panel.getByLabel('Cart total')).toContainText('€');
+  await panel.getByRole('button', { name: /Increase quantity/ }).click();
+  await expect(panel.getByText('Total (2 items)')).toBeVisible();
+
+  await panel.getByRole('link', { name: 'Checkout now' }).click(); // a visitor is asked to sign in
+  await expect(page).toHaveURL(/\/login\?next=%2Fcheckout/);
+  await page.goBack();
+  await page
+    .getByRole('banner')
+    .getByRole('link', { name: /^Cart, 2 items/ })
+    .click();
+  await page
+    .getByRole('dialog', { name: 'My shopping cart' })
+    .getByRole('link', { name: 'View cart' })
+    .click();
+  await expect(page).toHaveURL(/\/cart$/);
+  await expect(page.getByRole('list', { name: 'Cart items' }).locator('li')).toHaveCount(1);
+});
+
 test('the demo buyer has order history and an account page that protects the demo password', async ({
   page,
 }) => {

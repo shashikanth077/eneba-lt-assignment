@@ -41,3 +41,20 @@ describe('ProductCard (reference anatomy)', () => {
     ).toBeInTheDocument();
   });
 });
+
+describe('ProductCard actions', () => {
+  it('lists "Add to cart" before "View offers", and the cover itself links to the game', () => {
+    const product = card(1, 'Plain Game') as unknown as Parameters<
+      typeof ProductCard
+    >[0]['product'];
+    const { container } = renderWithProviders(<ProductCard product={{ ...product, offerId: 5 }} />);
+
+    const actions = container.querySelector('article span:has(> button)');
+    const labels = Array.from(actions?.children ?? []).map((el) => el.textContent);
+    expect(labels).toEqual(['Add to cart', 'View offers']);
+    expect(container.querySelector('a[aria-hidden="true"]')).toHaveAttribute(
+      'href',
+      `/product/${product.slug}`,
+    );
+  });
+});

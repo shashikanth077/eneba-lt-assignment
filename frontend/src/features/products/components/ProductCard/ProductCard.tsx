@@ -31,10 +31,13 @@ export function ProductCard({ product }: ProductCardProps) {
       <span className={styles.media}>
         <img src={coverUrl} alt="" loading="lazy" className={styles.cover} />
         <span className={styles.strip}>{platform.name}</span>
+        <Link
+          to={`/product/${slug}`}
+          className={styles.coverLink}
+          tabIndex={-1}
+          aria-hidden="true"
+        />
         <span className={styles.actions}>
-          <Link className={styles.details} to={`/product/${slug}`}>
-            View offers
-          </Link>
           <button
             type="button"
             className={styles.add}
@@ -43,6 +46,9 @@ export function ProductCard({ product }: ProductCardProps) {
           >
             {line?.pending ? 'Adding…' : 'Add to cart'}
           </button>
+          <Link className={styles.details} to={`/product/${slug}`}>
+            View offers
+          </Link>
         </span>
       </span>
       <Link to={`/product/${slug}`} className={styles.body}>

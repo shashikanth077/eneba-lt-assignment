@@ -13,6 +13,20 @@ test('a visitor browses, opens the Categories panel, filters, opens a game and i
     await expect(page.getByText(/^From/).first()).toBeVisible();
   });
 
+  await test.step('a card offers "Add to cart" first, then "View offers", and View offers opens the game', async () => {
+    const card = page.locator('article').first();
+    await card.hover();
+    const actions = card.locator('span:has(> button)');
+    await expect(actions.locator('> *')).toHaveText(['Add to cart', 'View offers']);
+    await expect(actions).toHaveCSS('opacity', '1');
+    await card.getByRole('link', { name: 'View offers' }).click();
+    await expect(page).toHaveURL(/\/product\//);
+    await page.goBack();
+    await page.locator('article').first().locator('a[tabindex="-1"]').click({ force: true }); // the cover itself is a link too
+    await expect(page).toHaveURL(/\/product\//);
+    await page.goto('/store');
+  });
+
   await test.step('Categories opens a real side panel, fully visible, with links', async () => {
     await page.getByRole('button', { name: 'Categories' }).click();
     const panel = page.getByRole('dialog', { name: 'Categories' });

@@ -35,6 +35,7 @@ export function Button({
         tabIndex={linkDisabled ? -1 : undefined}
         onClick={(event) => {
           if (linkDisabled) event.preventDefault();
+          else onClick?.(event as never); // e.g. a drawer closes itself when one of its links is followed
         }}
         aria-label={rest['aria-label']}
       >
