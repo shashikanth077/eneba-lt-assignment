@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { makeStore } from '../../app/store';
 import { apiError, fakeApi } from '../../test/fakeApi';
 import { commerceBackend, line } from '../../test/commerceBackend';
-import { loginRequest } from '../auth/authSlice';
+import { loginRequest, loginSuccess } from '../auth/authSlice';
 import {
   addToCartRequest,
   fetchCartRequest,
@@ -14,12 +14,19 @@ import {
 } from './cartSlice';
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 30));
-const ada = { id: 7, email: 'ada@example.com', displayName: 'Ada' };
+const ada = { id: 7, email: 'ada@example.com', displayName: 'Ada', emailVerified: true };
+
+/** These tests are about the signed-in cart (the server's); the visitor's cart has its own file. */
+const signedInStore = () => {
+  const store = makeStore();
+  store.dispatch(loginSuccess(ada));
+  return store;
+};
 
 describe('cart slice + saga', () => {
   it('the badge count is derived from the lines, not stored', async () => {
     commerceBackend({ lines: [line(1, 'A', 1000, 2), line(2, 'B', 500, 1)] });
-    const store = makeStore();
+    const store = signedInStore();
     store.dispatch(fetchCartRequest());
     await settle();
 
@@ -30,7 +37,7 @@ describe('cart slice + saga', () => {
 
   it("every change answers with the server's whole cart, whose total replaces ours", async () => {
     const api = commerceBackend({ lines: [line(1, 'A', 1000, 1)] });
-    const store = makeStore();
+    const store = signedInStore();
     store.dispatch(fetchCartRequest());
     await settle();
 
@@ -51,7 +58,7 @@ describe('cart slice + saga', () => {
       lines: [line(1, 'A', 1000, 1), line(2, 'B', 500, 1)],
       extra: { 'PATCH /api/cart/1': apiError(409, 'insufficient_stock', 'Only 2 left') },
     });
-    const store = makeStore();
+    const store = signedInStore();
     store.dispatch(fetchCartRequest());
     await settle();
 
@@ -76,7 +83,7 @@ describe('cart slice + saga', () => {
       lines: [line(1, 'A', 1000, 1)],
       extra: { 'POST /api/cart': { status: 201, body: after } },
     });
-    const store = makeStore();
+    const store = signedInStore();
     store.dispatch(fetchCartRequest());
     await settle();
     store.dispatch(addToCartRequest({ offerId: 1 }));

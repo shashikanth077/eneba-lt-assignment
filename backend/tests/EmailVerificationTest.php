@@ -6,6 +6,7 @@ namespace Tests;
 
 use App\Mail\VerificationMailer;
 use App\Support\KeyCipher;
+use App\Support\DemoAccounts;
 use Database\Seeds\DatabaseSeeder;
 use Psr\Http\Message\ResponseInterface;
 
@@ -150,7 +151,7 @@ final class EmailVerificationTest extends DbTestCase
         $seeder->run();
 
         self::assertSame(2, (int) self::$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn());
-        foreach (DatabaseSeeder::DEMO_USERS as [$email, , $password]) {
+        foreach (DemoAccounts::ALL as [$email, , $password]) {
             $response = $this->send('POST', '/api/auth/login', ['email' => $email, 'password' => $password]);
             self::assertSame(200, $response->getStatusCode(), $email);
             self::assertTrue($this->json($response)['user']['emailVerified']);

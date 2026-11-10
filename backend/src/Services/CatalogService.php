@@ -120,7 +120,7 @@ final class CatalogService
             'coverUrl' => '/api/images/products/' . $row['slug'] . '.svg',
             'platform' => ['slug' => $row['platform_slug'], 'name' => $row['platform_name']],
             'region' => ['slug' => $row['region_slug'], 'name' => $row['region_name']],
-            'offerId' => $row['offer_id'],
+            'offerId' => $row['offer_id'] ?? null,
             'fromPriceCents' => $row['from_price_cents'],
             'offerCount' => $row['offer_count'],
             'inStock' => $row['in_stock'],

@@ -73,7 +73,8 @@ Created by `php bin/setup.php` (the seeder; safe to repeat, never overwrites an 
 | `demo.buyer@keymart.test` | `Demo-Buyer-2027` |
 | `demo.shopper@keymart.test` | `Demo-Shopper-2027` |
 
-They are public on purpose (they hold no money and no keys). Do not seed them into a real production database.
+They are public on purpose (they hold no money and no real keys). Do not seed them into a real production database.
+Each has a realistic history (paid orders with delivered keys, created once by the seeder, not repeated on re-runs): *demo.buyer* two orders, *demo.shopper* one. Both can use **My account** (edit profile) and **My orders**. **Change password is refused for them** (`403 demo_account`), because the accounts are shared and the first visitor would lock everybody else out; register an own account to try it.
 
 ## Decisions and limits
 

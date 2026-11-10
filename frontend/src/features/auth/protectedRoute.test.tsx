@@ -238,7 +238,7 @@ describe('ProtectedRoute: redirect to login, then back', () => {
   });
 
   it('every protected route is guarded', async () => {
-    for (const path of ['/cart', '/checkout', '/orders']) {
+    for (const path of ['/checkout', '/orders']) {
       backendWithSession();
       const { router, unmount } = renderApp(path);
       await screen.findByRole('heading', { name: 'Sign in' });
@@ -256,5 +256,13 @@ describe('ProtectedRoute: redirect to login, then back', () => {
       expect(router.state.location.pathname, path).not.toBe('/login');
       unmount();
     }
+  });
+
+  it('the cart is public (a visitor can fill it); checkout is where signing in is asked for', async () => {
+    backendWithSession();
+    const { router } = renderApp('/cart');
+
+    expect(await screen.findByRole('heading', { name: 'Your cart' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/cart');
   });
 });

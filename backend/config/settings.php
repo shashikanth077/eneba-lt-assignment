@@ -69,6 +69,7 @@ return static function (): array {
             'register_per_hour_per_ip' => (int) $env('RATE_LIMIT_REGISTER_PER_HOUR', '10'),
             'checkout_per_10min_per_user' => (int) $env('RATE_LIMIT_CHECKOUT_PER_10MIN', '10'),
             'search_per_minute_per_ip' => (int) $env('RATE_LIMIT_SEARCH_PER_MINUTE', '240'),
+            'change_password_per_hour' => (int) $env('RATE_LIMIT_CHANGE_PASSWORD_PER_HOUR', '10'),
             'resend_verification_per_hour' => (int) $env('RATE_LIMIT_RESEND_VERIFICATION_PER_HOUR', '5'),
         ],
         'cache' => [

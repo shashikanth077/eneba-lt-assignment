@@ -135,10 +135,10 @@ final class HomeTest extends DbTestCase
 
         self::assertSame(['Delta', 'Bravo', 'Charlie', 'Alpha', 'Hotel', 'Golf'], array_column($items, 'name'), 'echo (sold out) and foxtrot (inactive offer) are excluded');
         self::assertSame(
-            ['id', 'slug', 'name', 'coverUrl', 'platform', 'region', 'fromPriceCents', 'offerCount', 'inStock', 'discountPct'],
+            ['id', 'slug', 'name', 'coverUrl', 'platform', 'region', 'offerId', 'fromPriceCents', 'offerCount', 'inStock', 'discountPct'],
             array_keys($items[1]),
         );
-        self::assertSame(['id', 'slug', 'name', 'coverUrl', 'platform', 'region', 'fromPriceCents', 'offerCount', 'inStock'], array_keys($items[0]), 'no discountPct without a deal');
+        self::assertSame(['id', 'slug', 'name', 'coverUrl', 'platform', 'region', 'offerId', 'fromPriceCents', 'offerCount', 'inStock'], array_keys($items[0]), 'no discountPct without a deal');
         self::assertSame(['slug' => 'steam', 'name' => 'Steam'], $items[0]['platform']);
         self::assertSame(700, $items[0]['fromPriceCents']);
         self::assertTrue($items[0]['inStock']);
@@ -171,7 +171,7 @@ final class HomeTest extends DbTestCase
 
         self::assertSame(['Bravo', 'Charlie'], array_column($items, 'name'), 'golf: deal expired; hotel: the deal is on a pricier offer');
         self::assertSame(
-            ['id', 'slug', 'name', 'coverUrl', 'platform', 'region', 'fromPriceCents', 'offerCount', 'inStock', 'discountPct', 'originalPriceCents'],
+            ['id', 'slug', 'name', 'coverUrl', 'platform', 'region', 'offerId', 'fromPriceCents', 'offerCount', 'inStock', 'discountPct', 'originalPriceCents'],
             array_keys($items[0]),
         );
         self::assertSame([2000, 50, 4000], [$items[0]['fromPriceCents'], $items[0]['discountPct'], $items[0]['originalPriceCents']]);

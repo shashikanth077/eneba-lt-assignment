@@ -89,6 +89,26 @@ final class AuthController
         return JsonResponse::write($response, ['sent' => true], 202);
     }
 
+    /** Edit profile: the display name (the e-mail is the login and is verified, so it is not editable here). */
+    public function updateProfile(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $data = Validator::validate($this->body($request), ['displayName' => 'required|string|min:2|max:50']);
+        $user = $this->auth->updateProfile($request->getAttribute('user')['id'], trim($data['displayName']));
+
+        return JsonResponse::write($response, ['user' => self::present($user)]);
+    }
+
+    public function changePassword(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $data = Validator::validate($this->body($request), [
+            'currentPassword' => 'required|string|max:128',
+            'newPassword' => 'required|string|min:8|max:128',
+        ]);
+        $user = $this->auth->changePassword($request->getAttribute('user')['id'], $data['currentPassword'], $data['newPassword']);
+
+        return $this->signedIn($response, $user, 200); // a fresh cookie for this device; every other session was just revoked
+    }
+
     public function me(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         return JsonResponse::write($response, ['user' => self::present($request->getAttribute('user'))]);

@@ -43,7 +43,7 @@ final class CatalogTest extends DbTestCase
 
         $echo = $body['items'][0];
         self::assertSame(
-            ['id', 'slug', 'name', 'coverUrl', 'platform', 'region', 'fromPriceCents', 'offerCount', 'inStock'],
+            ['id', 'slug', 'name', 'coverUrl', 'platform', 'region', 'offerId', 'fromPriceCents', 'offerCount', 'inStock'],
             array_keys($echo),
             'no discountPct key when the cheapest offer has no deal',
         );
@@ -282,7 +282,7 @@ final class CatalogTest extends DbTestCase
         self::assertSame(['product', 'offers'], array_keys($body));
         $product = $body['product'];
         self::assertSame(
-            ['id', 'slug', 'name', 'coverUrl', 'platform', 'region', 'fromPriceCents', 'offerCount', 'inStock', 'discountPct', 'description', 'releaseDate', 'genres', 'publisher'],
+            ['id', 'slug', 'name', 'coverUrl', 'platform', 'region', 'offerId', 'fromPriceCents', 'offerCount', 'inStock', 'discountPct', 'description', 'releaseDate', 'genres', 'publisher'],
             array_keys($product),
         );
         self::assertSame('Alpha', $product['name']);

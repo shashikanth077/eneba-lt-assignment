@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeds;
 
 use App\Search\TextNormalizer;
+use App\Support\DemoAccounts;
 use App\Support\KeyCipher;
 use DateTimeImmutable;
 use PDO;
@@ -26,12 +27,6 @@ final class DatabaseSeeder
     {
     }
 
-    /** Two ready-to-use accounts for reviewers (docs/EMAIL.md). Public on purpose: they hold no money and no keys. */
-    public const DEMO_USERS = [
-        ['demo.buyer@keymart.test', 'Demo Buyer', 'Demo-Buyer-2027'],
-        ['demo.shopper@keymart.test', 'Demo Shopper', 'Demo-Shopper-2027'],
-    ];
-
     /** @return array<string, int> row counts per table */
     public function run(): array
     {
@@ -45,6 +40,7 @@ final class DatabaseSeeder
             $this->seedBanners();
             $this->seedHomeBlocks();
             $this->seedDemoUsers();
+            $this->seedDemoOrders();
             $this->pdo->commit();
         } catch (\Throwable $e) {
             $this->pdo->rollBack();
@@ -218,20 +214,26 @@ final class DatabaseSeeder
             $offerIds[$row['product_id'] . ':' . $row['seller_id']] = (int) $row['id'];
         }
 
-        $keyRng = new Prng(self::SEED + 7);
+        // Game keys are INVENTORY, not catalogue data: they are created only for an offer that has no key rows at all (never topped up, so a
+        // sold-out offer stays sold out), they are random (not derivable from this code), and a repeated run adds nothing.
+        $this->assertExistingKeysReadable();
+        $haveKeys = array_flip(array_map('intval', $this->pdo->query('SELECT DISTINCT offer_id FROM game_keys')->fetchAll(PDO::FETCH_COLUMN)));
         $keyRows = [];
-        $seen = [];
         foreach ($plan as $offer) {
             $offerId = $offerIds[$offer['product'] . ':' . $offer['seller']];
+            if (isset($haveKeys[$offerId])) {
+                continue;
+            }
+            $seen = [];
             for ($i = 0; $i < $offer['keys']; $i++) {
                 do {
-                    $plain = $this->generateKey($keyRng);
+                    $plain = $this->generateKey();
                 } while (isset($seen[$plain]));
                 $seen[$plain] = true;
                 $keyRows[] = [$offerId, $this->cipher->encrypt($plain), KeyCipher::fingerprint($plain)];
             }
         }
-        // INSERT IGNORE on the unique fingerprint: existing keys (possibly sold) are left untouched.
+        // INSERT IGNORE on the unique fingerprint is the last line of defence against a duplicate.
         $this->insertIgnore('game_keys', ['offer_id', 'key_enc', 'key_hash'], $keyRows, 300);
 
         $dealRows = array_map(
@@ -279,13 +281,27 @@ final class DatabaseSeeder
         };
     }
 
-    private function generateKey(Prng $rng): string
+    /** New keys must be encrypted with the same KEY_ENCRYPTION_KEY as the existing ones, or the stock would be half unreadable. */
+    private function assertExistingKeysReadable(): void
+    {
+        $sample = $this->pdo->query('SELECT key_enc FROM game_keys ORDER BY id LIMIT 1')->fetchColumn();
+        if ($sample === false) {
+            return;
+        }
+        try {
+            $this->cipher->decrypt((string) $sample);
+        } catch (\Throwable) {
+            throw new \RuntimeException('The existing game keys cannot be decrypted with the current KEY_ENCRYPTION_KEY. Refusing to add keys encrypted under a different key: restore the original key.');
+        }
+    }
+
+    private function generateKey(): string
     {
         $groups = [];
         for ($g = 0; $g < 3; $g++) {
             $group = '';
             for ($i = 0; $i < 5; $i++) {
-                $group .= self::KEY_ALPHABET[$rng->int(0, strlen(self::KEY_ALPHABET) - 1)];
+                $group .= self::KEY_ALPHABET[random_int(0, strlen(self::KEY_ALPHABET) - 1)];
             }
             $groups[] = $group;
         }
@@ -339,11 +355,87 @@ final class DatabaseSeeder
     {
         $exists = $this->pdo->prepare('SELECT 1 FROM users WHERE email = ?');
         $insert = $this->pdo->prepare('INSERT INTO users (email, password_hash, display_name, email_verified_at) VALUES (?, ?, ?, NOW())');
-        foreach (self::DEMO_USERS as [$email, $name, $password]) {
+        foreach (DemoAccounts::ALL as [$email, $name, $password]) {
             $exists->execute([$email]);
             if ($exists->fetchColumn() === false) {
                 $insert->execute([$email, password_hash($password, PASSWORD_ARGON2ID), $name]);
             }
+        }
+    }
+
+    /**
+     * Realistic history for the demo accounts, so "My orders" is not empty: paid orders whose keys were really taken from the shelf
+     * (status sold, order_id, sold_at), exactly as a purchase would leave them. Created once per account (an account that already has
+     * any order is left alone), so re-running never adds orders or consumes more stock.
+     */
+    private function seedDemoOrders(): void
+    {
+        // [account, days ago, offers as [offer position in id order, qty]]
+        $plans = [
+            ['demo.buyer@keymart.test', 12, [[0, 1], [7, 2]]],
+            ['demo.buyer@keymart.test', 3, [[15, 1]]],
+            ['demo.shopper@keymart.test', 6, [[22, 1]]],
+        ];
+        $hasOrders = $this->pdo->prepare('SELECT 1 FROM orders WHERE user_id = ? LIMIT 1');
+        $userId = $this->pdo->prepare('SELECT id FROM users WHERE email = ?');
+        $offers = $this->pdo->query(
+            "SELECT o.id, o.product_id, o.price_cents, p.slug, p.name, s.name AS seller
+             FROM offers o JOIN products p ON p.id = o.product_id JOIN sellers s ON s.id = o.seller_id
+             WHERE o.active = 1 AND (SELECT COUNT(*) FROM game_keys k WHERE k.offer_id = o.id AND k.status = 'available') >= 5
+             ORDER BY o.id LIMIT 40",
+        )->fetchAll();
+        $done = [];
+        foreach ($plans as [$email, $daysAgo, $lines]) {
+            $userId->execute([$email]);
+            $id = $userId->fetchColumn();
+            if ($id === false || isset($done[$email])) {
+                continue;
+            }
+            $hasOrders->execute([$id]);
+            $firstTime = $hasOrders->fetchColumn() === false;
+            $done[$email] = true; // decided once per account: its later plans belong to the same first run
+            if (!$firstTime) {
+                continue;
+            }
+            foreach ($plans as [$planEmail, $planDays, $planLines]) {
+                if ($planEmail === $email) {
+                    $this->createPaidOrder((int) $id, $planDays, $planLines, $offers);
+                }
+            }
+        }
+    }
+
+    /**
+     * @param list<array{0: int, 1: int}> $lines
+     * @param list<array<string, mixed>> $offers
+     */
+    private function createPaidOrder(int $userId, int $daysAgo, array $lines, array $offers): void
+    {
+        $picked = [];
+        $total = 0;
+        foreach ($lines as [$position, $qty]) {
+            $offer = $offers[$position] ?? null;
+            $available = $offer === null ? 0 : (int) $this->pdo->query("SELECT COUNT(*) FROM game_keys WHERE offer_id = {$offer['id']} AND status = 'available'")->fetchColumn();
+            if ($offer === null || $available < $qty) {
+                return; // not enough stock to build a truthful order: skip it rather than invent one
+            }
+            $picked[] = [$offer, $qty];
+            $total += (int) $offer['price_cents'] * $qty;
+        }
+        $paidAt = (new DateTimeImmutable('now', new \DateTimeZone('UTC')))->modify("-$daysAgo days")->format('Y-m-d H:i:s');
+        $this->pdo->prepare(
+            "INSERT INTO orders (user_id, status, currency, total_cents, reserved_until, paid_at, created_at) VALUES (?, 'paid', 'EUR', ?, ?, ?, ?)",
+        )->execute([$userId, $total, $paidAt, $paidAt, $paidAt]);
+        $orderId = (int) $this->pdo->lastInsertId();
+        $item = $this->pdo->prepare(
+            'INSERT INTO order_items (order_id, offer_id, product_id, product_slug, product_name, seller_name, unit_price_cents, qty) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        );
+        foreach ($picked as [$offer, $qty]) {
+            $item->execute([$orderId, $offer['id'], $offer['product_id'], $offer['slug'], $offer['name'], $offer['seller'], $offer['price_cents'], $qty]);
+            $this->pdo->prepare(sprintf(
+                "UPDATE game_keys SET status = 'sold', order_id = ?, reserved_until = NULL, sold_at = ? WHERE offer_id = ? AND status = 'available' ORDER BY id LIMIT %d",
+                $qty,
+            ))->execute([$orderId, $paidAt, $offer['id']]);
         }
     }
 }

@@ -34,7 +34,11 @@ const main = () => within(screen.getByRole('main'));
 const gameNames = () =>
   within(main().getByRole('list', { name: 'Games' }))
     .getAllByRole('listitem')
-    .map((item) => within(item).getByRole('link').getAttribute('href'));
+    .map((item) =>
+      within(item)
+        .getByRole('link', { name: (name) => name !== 'View offers' })
+        .getAttribute('href'),
+    );
 const productCalls = (api: { callsTo: (p: string) => string[] }) => api.callsTo('/api/products');
 const lastProductQuery = (api: { callsTo: (p: string) => string[] }) =>
   new URLSearchParams((productCalls(api).at(-1) ?? '').split('?')[1]);

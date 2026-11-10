@@ -76,6 +76,10 @@ return static function (App $app): void {
             $auth->post('/resend-verification', [AuthController::class, 'resendVerification'])
                 ->add($limit('resend_verification', $limits['resend_verification_per_hour'], 3600, true))
                 ->add(AuthMiddleware::class);
+            $auth->patch('/profile', [AuthController::class, 'updateProfile'])->add(AuthMiddleware::class);
+            $auth->post('/change-password', [AuthController::class, 'changePassword'])
+                ->add($limit('change_password', $limits['change_password_per_hour'], 3600, true))
+                ->add(AuthMiddleware::class);
             $auth->get('/me', [AuthController::class, 'me'])->add(AuthMiddleware::class);
         });
     });

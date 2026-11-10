@@ -65,6 +65,9 @@ export function AccountMenu() {
         <div className={styles.email}>{user.email}</div>
       </MenuHeader>
       <MenuDivider />
+      <MenuItem to="/account">
+        <UserIcon size={18} aria-hidden /> My account
+      </MenuItem>
       <MenuItem to="/orders">
         <Receipt size={18} aria-hidden /> My orders
       </MenuItem>

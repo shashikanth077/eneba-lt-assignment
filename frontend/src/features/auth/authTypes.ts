@@ -25,6 +25,9 @@ export interface AuthState {
   signingOut: boolean;
   login: FormRequestState;
   register: FormRequestState;
+  /** Account page: the two forms. `saved` is true after a success, until the next attempt. */
+  profile: FormRequestState & { saved: boolean };
+  password: FormRequestState & { saved: boolean };
   /** Opening the link from the verification e-mail (/verify-email?token=...). */
   verification: {
     status: 'idle' | 'verifying' | 'verified' | 'failed';

@@ -56,6 +56,13 @@ export const routes: RouteObject[] = [
         }),
       },
       {
+        // public: a visitor can fill and edit a cart; signing in is asked for at checkout
+        path: 'cart',
+        lazy: async () => ({
+          Component: (await import('../features/cart/pages/CartPage')).CartPage,
+        }),
+      },
+      {
         path: 'verify-email',
         lazy: async () => ({
           Component: (await import('../features/auth/pages/VerifyEmailPage')).VerifyEmailPage,
@@ -66,15 +73,15 @@ export const routes: RouteObject[] = [
         element: <ProtectedRoute />,
         children: [
           {
-            path: 'cart',
-            lazy: async () => ({
-              Component: (await import('../features/cart/pages/CartPage')).CartPage,
-            }),
-          },
-          {
             path: 'checkout',
             lazy: async () => ({
               Component: (await import('../features/checkout/pages/CheckoutPage')).CheckoutPage,
+            }),
+          },
+          {
+            path: 'account',
+            lazy: async () => ({
+              Component: (await import('../features/auth/pages/AccountPage')).AccountPage,
             }),
           },
           {

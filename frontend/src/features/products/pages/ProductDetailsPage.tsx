@@ -67,7 +67,7 @@ function ProductDetails({ data }: { data: ProductResponse }) {
           </p>
           <p>{product.description}</p>
         </div>
-        <BuyBox cheapest={cheapest} offerCount={buyable.length} />
+        <BuyBox cheapest={cheapest} offerCount={buyable.length} productSlug={product.slug} />
       </div>
 
       <section aria-labelledby="offers-heading">
@@ -82,7 +82,12 @@ function ProductDetails({ data }: { data: ProductResponse }) {
             action={<Button to="/store">Browse the store</Button>}
           />
         ) : (
-          <OfferTable productName={product.name} regionName={product.region.name} offers={offers} />
+          <OfferTable
+            productSlug={product.slug}
+            productName={product.name}
+            regionName={product.region.name}
+            offers={offers}
+          />
         )}
       </section>
     </div>

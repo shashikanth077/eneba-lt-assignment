@@ -1,18 +1,14 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { PriceDisplay } from '../../../../components/common';
 import { classNames } from '../../../../utils/classNames';
 import { useAppDispatch, useAppSelector } from '../../../../app/hooks';
-import { selectIsAuthenticated } from '../../../auth/authSlice';
 import { addToCartRequest, selectLineState } from '../../../cart/cartSlice';
-import { loginUrl } from '../../../../utils/redirect';
 import type { ProductCardProps } from './ProductCard.types';
 import styles from './ProductCard.module.scss';
 
 /** The tile every list of games uses (homepage rails, store grid, search results). Pure view: no store, no requests. */
 export function ProductCard({ product }: ProductCardProps) {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const location = useLocation();
   const {
     slug,
     name,
@@ -25,15 +21,10 @@ export function ProductCard({ product }: ProductCardProps) {
     inStock,
     offerId,
   } = product;
-  const signedIn = useAppSelector(selectIsAuthenticated);
   const line = useAppSelector(selectLineState(offerId ?? 0));
   const add = () => {
     if (offerId === null) return;
-    if (!signedIn) {
-      navigate(loginUrl(location.pathname + location.search));
-      return;
-    }
-    dispatch(addToCartRequest({ offerId }));
+    dispatch(addToCartRequest({ offerId, productSlug: slug }));
   };
   return (
     <article className={styles.card}>

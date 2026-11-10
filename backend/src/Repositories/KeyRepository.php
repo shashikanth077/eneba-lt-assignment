@@ -74,7 +74,7 @@ final class KeyRepository
     /** Reserved -> sold for the whole order. Returns how many keys were sold, so the caller can compare with what it expects. */
     public function sell(int $orderId): int
     {
-        $stmt = $this->pdo->prepare("UPDATE game_keys SET status = 'sold', reserved_until = NULL WHERE order_id = ? AND status = 'reserved'");
+        $stmt = $this->pdo->prepare("UPDATE game_keys SET status = 'sold', reserved_until = NULL, sold_at = NOW() WHERE order_id = ? AND status = 'reserved'");
         $stmt->execute([$orderId]);
 
         return $stmt->rowCount();
