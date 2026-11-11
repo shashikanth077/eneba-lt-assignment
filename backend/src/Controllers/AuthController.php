@@ -11,6 +11,7 @@ use App\Http\JsonResponse;
 use App\Services\AuthService;
 use App\Services\EmailVerificationService;
 use App\Support\ClientIp;
+use App\Support\Log;
 use App\Support\Validator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -35,7 +36,13 @@ final class AuthController
             'displayName' => 'required|string|min:2|max:50',
         ]);
 
-        $user = $this->auth->register($data['email'], $data['password'], $data['displayName']);
+        try {
+            $user = $this->auth->register($data['email'], $data['password'], $data['displayName']);
+        } catch (ApiException $e) {
+            Log::warn('auth.register.refused', 'sign-up refused: ' . $e->errorCode(), ['reason' => $e->errorCode(), 'email' => Log::maskEmail($data['email'])]);
+            throw $e;
+        }
+        Log::info('auth.register.ok', 'account created', ['user_id' => $user['id'], 'email' => Log::maskEmail($user['email'])]);
         $this->verification->sendTo($user['id'], $user['email'], $user['display_name']); // best effort: never fails the sign-up
 
         return $this->signedIn($response, $user, 201);
@@ -48,7 +55,15 @@ final class AuthController
             'password' => 'required|string|max:128',
         ]);
 
-        $user = $this->auth->login($data['email'], $data['password'], ClientIp::from($request, $this->trustedProxies));
+        $ip = ClientIp::from($request, $this->trustedProxies);
+        try {
+            $user = $this->auth->login($data['email'], $data['password'], $ip);
+        } catch (ApiException $e) {
+            // the client always gets the same answer for "unknown e-mail" and "wrong password"; the log may be specific, the client never is
+            Log::warn('auth.login.failed', 'sign-in refused: ' . $e->errorCode(), ['reason' => $e->errorCode(), 'email' => Log::maskEmail($data['email']), 'ip' => $ip]);
+            throw $e;
+        }
+        Log::info('auth.login.ok', 'signed in', ['user_id' => $user['id']]);
 
         return $this->signedIn($response, $user, 200);
     }
@@ -72,7 +87,13 @@ final class AuthController
     public function verifyEmail(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $data = Validator::validate($this->body($request), ['token' => 'required|string|min:32|max:128']);
-        $this->verification->verify($data['token']);
+        try {
+            $this->verification->verify($data['token']);
+        } catch (ApiException $e) {
+            Log::warn('auth.verify.failed', 'e-mail verification link refused (unknown, expired or already used)', ['reason' => $e->errorCode()]);
+            throw $e;
+        }
+        Log::info('auth.verify.ok', 'e-mail address verified');
 
         return JsonResponse::write($response, ['verified' => true]);
     }
@@ -84,6 +105,7 @@ final class AuthController
         if ($user['email_verified_at'] !== null) {
             throw ApiException::conflict('already_verified', 'This email address is already verified');
         }
+        Log::info('auth.verify.resend', 'a new verification link was requested', ['user_id' => $user['id']]);
         $this->verification->sendTo($user['id'], $user['email'], $user['display_name']);
 
         return JsonResponse::write($response, ['sent' => true], 202);
@@ -94,6 +116,7 @@ final class AuthController
     {
         $data = Validator::validate($this->body($request), ['displayName' => 'required|string|min:2|max:50']);
         $user = $this->auth->updateProfile($request->getAttribute('user')['id'], trim($data['displayName']));
+        Log::info('auth.profile.updated', 'display name changed', ['user_id' => $user['id']]);
 
         return JsonResponse::write($response, ['user' => self::present($user)]);
     }
@@ -104,7 +127,14 @@ final class AuthController
             'currentPassword' => 'required|string|max:128',
             'newPassword' => 'required|string|min:8|max:128',
         ]);
-        $user = $this->auth->changePassword($request->getAttribute('user')['id'], $data['currentPassword'], $data['newPassword']);
+        $id = $request->getAttribute('user')['id'];
+        try {
+            $user = $this->auth->changePassword($id, $data['currentPassword'], $data['newPassword']);
+        } catch (\Throwable $e) {
+            Log::warn('auth.password.refused', 'password change refused: ' . ($e instanceof ApiException ? $e->errorCode() : 'validation_failed'), ['user_id' => $id]);
+            throw $e;
+        }
+        Log::info('auth.password.changed', 'password changed, other sessions revoked', ['user_id' => $id]);
 
         return $this->signedIn($response, $user, 200); // a fresh cookie for this device; every other session was just revoked
     }

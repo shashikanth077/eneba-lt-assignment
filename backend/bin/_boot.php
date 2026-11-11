@@ -11,4 +11,7 @@ require __DIR__ . '/../vendor/autoload.php';
 $root = dirname(__DIR__);
 Dotenv::createImmutable($root)->safeLoad();
 
-return (require $root . '/config/container.php')((require $root . '/config/settings.php')());
+$settings = (require $root . '/config/settings.php')();
+App\Support\Log::configure($settings['log']['level']);
+
+return (require $root . '/config/container.php')($settings);

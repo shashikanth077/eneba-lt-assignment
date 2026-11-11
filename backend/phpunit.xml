@@ -6,6 +6,7 @@
     <php>
         <!-- Test-only values. Real DB credentials still come from the environment / .env. -->
         <env name="APP_DEBUG" value="false" force="true"/>
+        <env name="LOG_LEVEL" value="off" force="true"/> <!-- tests that look at the log switch it on and capture it (LogTest) -->
         <env name="JWT_SECRET" value="phpunit-secret-phpunit-secret-phpunit-secret" force="true"/>
         <env name="COOKIE_SECURE" value="true" force="true"/>
         <env name="APP_URL" value="http://localhost:5173" force="true"/>

@@ -6,6 +6,7 @@ export const endpoints = {
   logout: '/auth/logout',
   profile: '/auth/profile',
   changePassword: '/auth/change-password',
+  clientLog: '/client-log',
   verifyEmail: '/auth/verify-email',
   resendVerification: '/auth/resend-verification',
   products: '/products',

@@ -90,9 +90,14 @@ return static function (array $settings, array $overrides = []): ContainerInterf
         ),
         VerificationMailer::class => static function () use ($settings): VerificationMailer {
             $mail = $settings['mail'];
-            $ready = $mail['service_id'] !== '' && $mail['auth_template_id'] !== '' && $mail['public_key'] !== '' && $mail['private_key'] !== '';
+            $missing = array_keys(array_filter([
+                'EMAILJS_SERVICE_ID' => $mail['service_id'] === '',
+                'EMAILJS_AUTH_TEMPLATE_ID' => $mail['auth_template_id'] === '',
+                'EMAILJS_PUBLIC_KEY' => $mail['public_key'] === '',
+                'EMAILJS_PRIVATE_KEY' => $mail['private_key'] === '',
+            ]));
 
-            return $ready ? new EmailJsVerificationMailer($mail) : new NullVerificationMailer();
+            return $missing === [] ? new EmailJsVerificationMailer($mail) : new NullVerificationMailer($missing);
         },
         EmailVerificationService::class => static fn (ContainerInterface $c): EmailVerificationService => new EmailVerificationService(
             $c->get(PDO::class),

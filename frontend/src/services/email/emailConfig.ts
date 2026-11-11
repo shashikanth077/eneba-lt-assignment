@@ -1,5 +1,16 @@
 const env = import.meta.env;
 
+/** The names of the settings that are empty: they go to the log, so "no e-mail was sent" always says which one to set. */
+export function missingEmailSettings(): string[] {
+  const required: Record<string, string | undefined> = {
+    VITE_EMAILJS_SERVICE_ID: env.VITE_EMAILJS_SERVICE_ID,
+    VITE_EMAILJS_PUBLIC_KEY: env.VITE_EMAILJS_PUBLIC_KEY,
+    VITE_EMAILJS_AUTH_TEMPLATE_ID: env.VITE_EMAILJS_AUTH_TEMPLATE_ID,
+    VITE_EMAILJS_ORDER_TEMPLATE_ID: env.VITE_EMAILJS_ORDER_TEMPLATE_ID,
+  };
+  return Object.keys(required).filter((name) => !required[name]);
+}
+
 export interface EmailConfig {
   serviceId: string;
   publicKey: string;

@@ -36,6 +36,8 @@ return static function (): array {
             'lock_strategy' => $env('LOCK_STRATEGY', 'auto'), // auto | skip | wait (see App\Support\LockStrategy)
         ],
         // Only needed when the API is NOT at the root of its host, e.g. XAMPP's http://localhost/keymart/backend/public
+        // debug | info | warn | error: the least important level that is written (docs/LOGGING.md)
+        'log' => ['level' => $env('LOG_LEVEL', 'info')],
         'base_path' => rtrim($env('APP_BASE_PATH', ''), '/'),
         'app_url' => $env('APP_URL'),
         'auth' => [
@@ -73,6 +75,7 @@ return static function (): array {
             'register_per_hour_per_ip' => (int) $env('RATE_LIMIT_REGISTER_PER_HOUR', '10'),
             'checkout_per_10min_per_user' => (int) $env('RATE_LIMIT_CHECKOUT_PER_10MIN', '10'),
             'search_per_minute_per_ip' => (int) $env('RATE_LIMIT_SEARCH_PER_MINUTE', '240'),
+            'client_log_per_minute' => (int) $env('RATE_LIMIT_CLIENT_LOG_PER_MINUTE', '60'),
             'change_password_per_hour' => (int) $env('RATE_LIMIT_CHANGE_PASSWORD_PER_HOUR', '10'),
             'resend_verification_per_hour' => (int) $env('RATE_LIMIT_RESEND_VERIFICATION_PER_HOUR', '5'),
         ],

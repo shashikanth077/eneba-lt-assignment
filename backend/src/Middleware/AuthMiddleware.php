@@ -7,6 +7,7 @@ namespace App\Middleware;
 use App\Auth\SessionCookie;
 use App\Auth\TokenService;
 use App\Exceptions\ApiException;
+use App\Support\Log;
 use App\Repositories\UserRepository;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -32,11 +33,18 @@ final class AuthMiddleware implements MiddlewareInterface
             throw ApiException::unauthorized();
         }
 
-        $claims = $this->tokens->parse($jwt);
+        try {
+            $claims = $this->tokens->parse($jwt);
+        } catch (ApiException $e) {
+            Log::warn('auth.session.rejected', 'a session cookie was refused: ' . $e->errorCode(), ['reason' => $e->errorCode()]); // expired or forged
+            throw $e;
+        }
         $user = $this->users->findById($claims['sub']);
         if ($user === null || $user['token_version'] !== $claims['tv']) {
+            Log::warn('auth.session.revoked', 'a valid-looking session was refused (user gone or signed out everywhere)', ['user_id' => $claims['sub']]);
             throw new ApiException(401, 'invalid_token', 'Invalid session');
         }
+        Log::addContext('user_id', $user['id']); // every later line of this request says who
 
         return $handler->handle($request->withAttribute('user', $user));
     }

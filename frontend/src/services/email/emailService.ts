@@ -2,7 +2,8 @@ import emailjs from '@emailjs/browser';
 import apiClient from '../api/apiClient';
 import { endpoints } from '../api/apiEndpoints';
 import { formatCurrency } from '../../utils/formatCurrency';
-import { emailConfig, type EmailConfig } from './emailConfig';
+import { reportEvent } from '../log/clientLog';
+import { emailConfig, missingEmailSettings, type EmailConfig } from './emailConfig';
 import {
   buildOrderItemsHtml,
   currentYear,
@@ -34,7 +35,16 @@ async function deliver(
   required: string[],
 ): Promise<EmailResult> {
   const config = emailConfig();
-  if (config === null) return { status: 'skipped' };
+  if (config === null) {
+    // not configured where this site was BUILT (Vercel: Settings > Environment Variables, then redeploy): say which settings are empty
+    console.warn(`EmailJS ${kind} e-mail skipped: missing ${missingEmailSettings().join(', ')}`);
+    reportEvent('email.skipped', {
+      kind,
+      reason: 'not configured',
+      missing: missingEmailSettings().join(','),
+    });
+    return { status: 'skipped' };
+  }
   const params: Record<string, string> = { ...build(config) };
   const missing = missingValues(
     Object.fromEntries(required.map((name) => [name, params[name] ?? ''])),
@@ -45,16 +55,32 @@ async function deliver(
   missing.push(...badLinks);
   if (missing.length > 0) {
     console.warn(`EmailJS ${kind} e-mail not sent: missing or invalid ${missing.join(', ')}`);
+    reportEvent('email.invalid', {
+      kind,
+      reason: 'missing or invalid values',
+      missing: missing.join(','),
+    });
     return { status: 'invalid', missing };
   }
   try {
     await emailjs.send(config.serviceId, templateId(config), params, {
       publicKey: config.publicKey,
     });
+    reportEvent('email.sent', { kind });
     return { status: 'sent' };
-  } catch {
-    // Not logged with the error object: it can echo the request (address, names).
-    console.warn(`EmailJS could not send the ${kind} e-mail`);
+  } catch (error) {
+    // EmailJS rejects with { status, text }: the text says why ("The Public Key is invalid", "The service ID not found", a quota...).
+    // Only that is reported: never the request, which holds the address and names.
+    const { status, text } = (error ?? {}) as { status?: number; text?: string };
+    console.warn(`EmailJS could not send the ${kind} e-mail: ${status ?? '?'} ${text ?? ''}`);
+    reportEvent('email.failed', {
+      kind,
+      status: typeof status === 'number' ? status : 0,
+      reason:
+        typeof text === 'string'
+          ? text.slice(0, 200)
+          : 'no answer from EmailJS (network, blocked, or the request was cancelled)',
+    });
     return { status: 'failed' };
   }
 }

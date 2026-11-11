@@ -5,8 +5,10 @@ declare(strict_types=1);
 use App\Http\JsonErrorHandler;
 use App\Middleware\CorsMiddleware;
 use App\Middleware\CsrfMiddleware;
+use App\Middleware\RequestLogMiddleware;
 use App\Middleware\SecurityHeadersMiddleware;
 use App\Support\ConfigGuard;
+use App\Support\Log;
 use DI\Bridge\Slim\Bridge;
 use Dotenv\Dotenv;
 use Slim\App;
@@ -21,7 +23,13 @@ return static function (array $overrides = []): App {
     Dotenv::createImmutable($root)->safeLoad(); // real env vars (Docker) win over .env
 
     $settings = (require $root . '/config/settings.php')();
-    ConfigGuard::assertSafe($settings); // a public deployment must not run on the secrets published in this repository
+    Log::configure($settings['log']['level']);
+    try {
+        ConfigGuard::assertSafe($settings); // a public deployment must not run on the secrets published in this repository
+    } catch (\Throwable $e) {
+        Log::error('app.config.unsafe', 'the application refuses to start: ' . $e->getMessage()); // the one place a misconfigured deploy says why
+        throw $e;
+    }
     $container = (require $root . '/config/container.php')($settings, $overrides);
 
     $app = Bridge::create($container);
@@ -41,7 +49,8 @@ return static function (array $overrides = []): App {
         static fn ($request, Throwable $e) => (new JsonErrorHandler($responses, $settings['debug']))($request, $e)
     );
     $app->add(new CorsMiddleware($responses, $settings['cors']['origins']));
-    $app->add(new SecurityHeadersMiddleware($settings['auth']['cookie_secure'])); // outermost: also covers CORS preflights and error responses
+    $app->add(new SecurityHeadersMiddleware($settings['auth']['cookie_secure'])); // also covers CORS preflights and error responses
+    $app->add(new RequestLogMiddleware($settings['auth']['trusted_proxies'])); // outermost: request id on every line, one line per request
 
     (require $root . '/config/routes.php')($app);
 

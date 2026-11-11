@@ -14,6 +14,7 @@ use App\Repositories\OrderRepository;
 use App\Support\Transaction;
 use PDO;
 use Throwable;
+use App\Support\Log;
 
 /**
  * Cart -> pending order + reserved keys + a Stripe PaymentIntent.
@@ -51,7 +52,15 @@ final class CheckoutService
             $this->lifecycle->closeAndCancelIntent($earlier, OrderStatus::CANCELED, 'replaced_by_new_checkout');
         }
 
-        $reservation = $this->reserve($userId);
+        Log::info('checkout.started', 'checkout started', ['user_id' => $userId]);
+        try {
+            $reservation = $this->reserve($userId);
+        } catch (ApiException $e) {
+            // cart_empty, out_of_stock (with the offers that failed), amount_too_small: refusals the buyer sees as such
+            Log::warn('checkout.refused', 'checkout refused: ' . $e->errorCode(), ['user_id' => $userId, 'reason' => $e->errorCode(), 'details' => $e->details()]);
+            throw $e;
+        }
+        Log::info('checkout.reserved', 'keys reserved and order created, waiting for the payment', ['user_id' => $userId, 'order_id' => $reservation['orderId'], 'total_cents' => $reservation['totalCents']]);
 
         try {
             $intent = $this->gateway->createIntent(
@@ -61,10 +70,11 @@ final class CheckoutService
                 'order-' . $reservation['orderId'],
             );
             $this->orders->attachPaymentIntent($reservation['orderId'], $intent['id']);
+            Log::info('checkout.intent', 'payment intent created at Stripe', ['order_id' => $reservation['orderId'], 'intent' => $intent['id']]);
         } catch (Throwable $e) {
             $this->lifecycle->close($reservation['orderId'], OrderStatus::FAILED, 'payment_provider_error');
+            Log::error('checkout.intent.failed', 'the payment provider refused or was unreachable; the keys were released', ['order_id' => $reservation['orderId'], 'error' => $e]);
             if ($e instanceof PaymentGatewayException) {
-                error_log('[checkout] ' . $e->getMessage());
                 throw new ApiException(502, 'payment_provider_error', 'The payment provider is not available, please try again');
             }
             throw $e;

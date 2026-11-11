@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Exceptions\ApiException;
 use App\Mail\VerificationMailer;
 use App\Support\ConfigGuard;
+use App\Support\Log;
 use PDO;
 
 /**
@@ -28,7 +29,7 @@ final class EmailVerificationService
     {
         $base = rtrim((string) $this->settings['app_url'], '/');
         if (!str_starts_with($base, 'https://') && !ConfigGuard::isLocal($this->settings)) {
-            error_log('[mail] verification e-mail not sent: APP_URL must be https:// outside local development');
+            Log::error('mail.verification.skipped', 'verification e-mail NOT sent: APP_URL must start with https:// outside local development', ['user_id' => $userId, 'app_url' => $base]);
 
             return false;
         }
@@ -40,12 +41,16 @@ final class EmailVerificationService
             'INSERT INTO email_verifications (user_id, token_hash, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? HOUR))',
         )->execute([$userId, hash('sha256', $token), $hours]);
 
-        return $this->mailer->sendVerification(
+        $sent = $this->mailer->sendVerification(
             $email,
             $displayName,
             $base . '/verify-email?token=' . $token,
             $hours === 1 ? '1 hour' : $hours . ' hours',
         );
+        // the mailer logged the details (sent, skipped because EmailJS is not configured, or the provider's refusal)
+        Log::debug('mail.verification.result', 'verification e-mail handed to the mailer', ['user_id' => $userId, 'sent' => $sent]);
+
+        return $sent;
     }
 
     /** @throws ApiException 400 invalid_verification_token */
