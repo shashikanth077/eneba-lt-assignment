@@ -44,6 +44,7 @@ Flow order for a purchase: `auth.register.ok` -> `mail.verification.*` -> `auth.
 | `auth.profile.updated`, `auth.password.changed` / `.refused` | info / warn | account changes |
 | `mail.verification.sent` | info | EmailJS accepted the verification e-mail |
 | `mail.verification.skipped` | warn / error | **not sent**: `missing_settings` lists the unset `EMAILJS_*` variables (warn), or `APP_URL` is not https (error) |
+| `mail.verification.invalid_recipient` | error | **not sent**: the account's address is empty or malformed (the address itself is never logged) |
 | `mail.verification.failed` | error | EmailJS refused: `http_status` and `provider_answer` say why ("The Public Key is invalid", "API calls are disabled for non-browser applications", quota ...) |
 | `cart.line.set` / `cart.stock.insufficient` | info / warn | a line saved; a quantity above the keys on the shelf |
 | `checkout.started` / `.reserved` / `.intent` | info | steps of a checkout (`order_id`, `total_cents`, the Stripe intent id) |

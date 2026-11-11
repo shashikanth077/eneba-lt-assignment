@@ -9,6 +9,7 @@ import {
   currentYear,
   formatOrderDate,
   isHttpUrl,
+  looksLikeEmail,
   missingValues,
   siteUrl,
 } from './emailHelpers';
@@ -45,10 +46,20 @@ async function deliver(
     });
     return { status: 'skipped' };
   }
-  const params: Record<string, string> = { ...build(config) };
+  const built = build(config);
+  // The recipient is aliased under the names EmailJS templates commonly use in their "To email" field, so a dashboard template that
+  // says {{email}} or {{user_email}} instead of {{to_email}} still resolves (docs/EMAIL.md). Always the real account address.
+  const params: Record<string, string> = {
+    ...built,
+    email: built.to_email,
+    user_email: built.to_email,
+  };
   const missing = missingValues(
     Object.fromEntries(required.map((name) => [name, params[name] ?? ''])),
   );
+  if (!missing.includes('to_email') && !looksLikeEmail(params.to_email)) {
+    missing.push('to_email');
+  }
   const badLinks = Object.entries(params)
     .filter(([name, value]) => name.endsWith('_url') && !isHttpUrl(value))
     .map(([name]) => name);
