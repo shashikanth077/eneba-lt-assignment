@@ -16,6 +16,9 @@ export default defineConfig(({ mode }) => {
       exclude: ['node_modules', 'dist', 'e2e'], // e2e/*.spec.ts belongs to Playwright
       css: false,
       restoreMocks: true,
+      unstubGlobals: true,
+      fileParallelism: false,
+      maxWorkers: 1,
     },
     server: {
       port: 5173,
