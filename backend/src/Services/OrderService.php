@@ -11,6 +11,7 @@ use App\Repositories\KeyRepository;
 use App\Repositories\OrderRepository;
 use App\Support\KeyCipher;
 use App\Support\Transaction;
+use App\Support\Log;
 
 /** Order history and detail. Keys are decrypted here and only here, and only for a PAID order of the CALLER. */
 final class OrderService
@@ -104,18 +105,27 @@ final class OrderService
      */
     private function confirmWithProvider(string $paymentIntentId): void
     {
+        if ($this->gateway instanceof \App\Payment\UnconfiguredPaymentGateway) {
+            // no Stripe key on this server: checkout already logged `checkout.payments.unconfigured` (error); not once more per poll
+            Log::debug('payment.sync.skipped', 'cannot ask Stripe: STRIPE_SECRET_KEY is not set', ['intent' => $paymentIntentId]);
+
+            return;
+        }
         try {
             $intent = $this->gateway->retrieveIntent($paymentIntentId);
             if ($intent['status'] !== 'succeeded') {
+                Log::debug('payment.sync.pending', 'Stripe says the payment is not complete yet', ['intent' => $paymentIntentId, 'stripe_status' => $intent['status']]);
+
                 return;
             }
+            Log::info('payment.sync.succeeded', 'Stripe reports the payment succeeded before any webhook: confirming from the server', ['intent' => $paymentIntentId]);
             $this->payments->handle([
                 'id' => 'sync_' . $paymentIntentId,
                 'type' => 'payment_intent.succeeded',
                 'data' => ['object' => $intent],
             ]);
         } catch (\Throwable $e) {
-            error_log('[orders] could not confirm payment ' . $paymentIntentId . ' with the provider: ' . $e->getMessage());
+            Log::error('payment.sync.failed', 'could not ask Stripe about a pending payment (is STRIPE_SECRET_KEY set, and does the server reach api.stripe.com?)', ['intent' => $paymentIntentId, 'error' => $e]);
         }
     }
 }

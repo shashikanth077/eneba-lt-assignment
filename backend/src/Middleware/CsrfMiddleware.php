@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use App\Support\Log;
 
 /**
  * CSRF defence for a cookie-authenticated API, on top of SameSite=Lax:
@@ -39,6 +40,7 @@ final class CsrfMiddleware implements MiddlewareInterface
         $origin = $request->getHeaderLine('Origin');
         if ($request->getHeaderLine('X-Requested-With') !== 'fetch'
             || ($origin !== '' && !in_array($origin, $this->allowedOrigins, true))) {
+            Log::warn('security.csrf.rejected', 'state-changing request refused: missing X-Requested-With header or an origin that is not allowed (is APP_URL exactly the address in the browser?)', ['origin' => $origin, 'has_header' => $request->getHeaderLine('X-Requested-With') === 'fetch', 'path' => $request->getUri()->getPath()]);
             throw new ApiException(403, 'csrf_rejected', 'Request rejected');
         }
 

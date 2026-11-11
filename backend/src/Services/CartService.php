@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Exceptions\ApiException;
 use App\Exceptions\ValidationException;
 use App\Repositories\CartRepository;
+use App\Support\Log;
 
 /** The buyer's cart. Prices, names and stock are read live on every call, nothing price-like is ever taken from the client. */
 final class CartService
@@ -100,12 +101,14 @@ final class CartService
             throw ApiException::notFound('Offer not found');
         }
         if ($qty > $stock['available']) {
+            Log::warn('cart.stock.insufficient', 'quantity above the keys on the shelf', ['user_id' => $userId, 'offer_id' => $offerId, 'wanted' => $qty, 'available' => $stock['available']]);
             throw ApiException::conflict('insufficient_stock', $stock['available'] === 0 ? 'Out of stock' : 'Only ' . $stock['available'] . ' left', [
                 'offerId' => $offerId,
                 'available' => $stock['available'],
             ]);
         }
         $this->cart->setQty($userId, $offerId, $qty);
+        Log::info('cart.line.set', 'cart line saved', ['user_id' => $userId, 'offer_id' => $offerId, 'qty' => $qty]);
 
         return $this->view($userId);
     }

@@ -6,6 +6,7 @@ namespace Database\Seeds;
 
 use App\Search\TextNormalizer;
 use App\Support\DemoAccounts;
+use App\Support\Log;
 use App\Support\KeyCipher;
 use DateTimeImmutable;
 use PDO;
@@ -236,6 +237,7 @@ final class DatabaseSeeder
         }
         // INSERT IGNORE on the unique fingerprint is the last line of defence against a duplicate.
         $this->insertIgnore('game_keys', ['offer_id', 'key_enc', 'key_hash'], $keyRows, 300);
+        Log::info('keys.seeded', 'game keys created for offers that had none', ['keys' => count($keyRows), 'offers_with_keys_already' => count($haveKeys)]);
 
         $dealRows = array_map(
             static fn (array $d): array => [$offerIds[$d['product'] . ':' . $d['seller']], $d['original'], $d['pct']],
@@ -296,6 +298,7 @@ final class DatabaseSeeder
         try {
             $this->cipher->decrypt((string) $sample);
         } catch (\Throwable) {
+            Log::error('keys.secret_mismatch', 'existing game keys cannot be decrypted with the current KEY_ENCRYPTION_KEY: seeding stopped');
             throw new \RuntimeException('The existing game keys cannot be decrypted with the current KEY_ENCRYPTION_KEY. Refusing to add keys encrypted under a different key: restore the original key.');
         }
     }

@@ -13,6 +13,7 @@ use Slim\Exception\HttpMethodNotAllowedException;
 use Slim\Exception\HttpNotFoundException;
 use PDOException;
 use Throwable;
+use App\Support\Log;
 
 /**
  * The single place where any exception becomes the API error format:
@@ -54,13 +55,13 @@ final class JsonErrorHandler
         }
 
         if ($e instanceof PDOException && in_array((int) $e->getCode(), self::DB_CONNECTION_CODES, true)) {
-            error_log('[db] connection problem: ' . $e->getMessage());
+            Log::error('db.unreachable', 'database connection problem (wrong DB_*/MYSQL_URL, host unreachable, or credentials refused)', ['code' => $e->getCode(), 'error' => $e]);
 
             return JsonResponse::error($response, 503, 'db_unavailable', 'Database is not reachable');
         }
 
         // Unexpected: log the real cause, never leak it unless debugging.
-        error_log(sprintf('[unhandled] %s: %s in %s:%d', $e::class, $e->getMessage(), $e->getFile(), $e->getLine()));
+        Log::error('app.unhandled', 'unhandled exception: ' . $e::class, ['error' => $e, 'where' => basename($e->getFile()) . ':' . $e->getLine()]);
         $details = $this->debug
             ? ['exception' => $e::class, 'message' => $e->getMessage(), 'trace' => explode("\n", $e->getTraceAsString())]
             : null;

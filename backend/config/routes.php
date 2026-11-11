@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Controllers\AuthController;
 use App\Controllers\CartController;
 use App\Controllers\CheckoutController;
+use App\Controllers\ClientLogController;
 use App\Controllers\OrderController;
 use App\Controllers\WebhookController;
 use App\Controllers\CatalogController;
@@ -34,6 +35,8 @@ return static function (App $app): void {
 
     $app->group('/api', function (RouteCollectorProxy $api) use ($blocks, $limit, $limits): void {
         $api->get('/health', [HealthController::class, 'show']);
+        // The browser reports e-mail/payment/UI problems here so they show up in the server log (docs/LOGGING.md); limited per address
+        $api->post('/client-log', [ClientLogController::class, 'report'])->add($limit('client_log', $limits['client_log_per_minute'], 60));
 
         $api->get('/products', [CatalogController::class, 'index']);
         $api->get('/products/{slug}', [CatalogController::class, 'show']);

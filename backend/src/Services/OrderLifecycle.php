@@ -11,6 +11,7 @@ use App\Repositories\OrderRepository;
 use App\Support\Transaction;
 use PDO;
 use Throwable;
+use App\Support\Log;
 
 /**
  * Closing a pending order (failed / expired / canceled): the status changes and the reserved keys go back to the shelf in
@@ -70,6 +71,7 @@ final class OrderLifecycle
     {
         foreach ($this->orders->dueIds($userId) as $orderId) {
             $this->closeAndCancelIntent($orderId, OrderStatus::EXPIRED, 'reservation_expired');
+            Log::info('order.expired', 'a reservation ran out: order closed, keys back on the shelf', ['order_id' => $orderId]);
         }
     }
 
@@ -79,7 +81,7 @@ final class OrderLifecycle
         try {
             $this->gateway->cancelIntent($intentId);
         } catch (Throwable $e) {
-            error_log('[orders] could not cancel payment ' . $intentId . ': ' . $e->getMessage());
+            Log::warn('payment.cancel_failed', 'could not cancel the payment at Stripe (the order is closed anyway)', ['intent' => $intentId, 'error' => $e]);
         }
     }
 }

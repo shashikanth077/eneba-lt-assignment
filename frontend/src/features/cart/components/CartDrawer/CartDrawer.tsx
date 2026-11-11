@@ -43,7 +43,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         <>
           <ul className={styles.items} aria-label="Cart items">
             {lines.map((line) => (
-              <CartItem key={line.offerId} line={line} issue={issues.get(line.offerId)} />
+              <CartItem key={line.offerId} line={line} issue={issues.get(line.offerId)} compact />
             ))}
           </ul>
           <div className={styles.footer}>

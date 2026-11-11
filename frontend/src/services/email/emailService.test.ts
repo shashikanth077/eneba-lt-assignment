@@ -8,6 +8,9 @@ import {
   sendVerificationEmail,
 } from './emailService';
 
+const report = vi.fn();
+vi.mock('../log/clientLog', () => ({ reportEvent: (...args: unknown[]) => report(...args) }));
+
 const send = vi.fn(async () => ({ status: 200, text: 'OK' }));
 vi.mock('@emailjs/browser', () => ({
   default: { send: (...args: unknown[]) => (send as (...a: unknown[]) => unknown)(...args) },
@@ -51,6 +54,7 @@ const lastParams = () =>
   (send.mock.calls.at(-1) as unknown as [string, string, Record<string, string>])[2];
 
 beforeEach(() => {
+  report.mockClear();
   send.mockClear();
   vi.unstubAllEnvs();
 });
@@ -193,5 +197,50 @@ describe('order confirmation e-mail (ORDER template)', () => {
       expect(result.status).toBe('invalid');
     }
     expect(send).not.toHaveBeenCalled();
+  });
+});
+
+describe('what is reported to the server log', () => {
+  it('names the empty settings when nothing can be sent', async () => {
+    vi.stubEnv('VITE_EMAILJS_SERVICE_ID', 'svc');
+    await sendRegistrationEmail({ user });
+    expect(report).toHaveBeenCalledWith('email.skipped', {
+      kind: 'registration',
+      reason: 'not configured',
+      missing:
+        'VITE_EMAILJS_PUBLIC_KEY,VITE_EMAILJS_AUTH_TEMPLATE_ID,VITE_EMAILJS_ORDER_TEMPLATE_ID',
+    });
+  });
+
+  it("reports EmailJS's own explanation of a refusal, without the address", async () => {
+    configure();
+    send.mockRejectedValueOnce({ status: 400, text: 'The Public Key is invalid' });
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    await sendOrderConfirmationEmail({ order, user });
+
+    expect(report).toHaveBeenCalledWith('email.failed', {
+      kind: 'order',
+      status: 400,
+      reason: 'The Public Key is invalid',
+    });
+    expect(JSON.stringify(report.mock.calls)).not.toContain('ana@example.com');
+  });
+
+  it('reports a success too, so a missing e-mail can be told apart from a missing attempt', async () => {
+    configure();
+    await sendRegistrationEmail({ user });
+    expect(report).toHaveBeenCalledWith('email.sent', { kind: 'registration' });
+  });
+
+  it('reports a network failure with a plain reason', async () => {
+    configure();
+    send.mockRejectedValueOnce(new Error('Failed to fetch'));
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    await sendRegistrationEmail({ user });
+    expect(report).toHaveBeenCalledWith(
+      'email.failed',
+      expect.objectContaining({ status: 0, kind: 'registration' }),
+    );
   });
 });

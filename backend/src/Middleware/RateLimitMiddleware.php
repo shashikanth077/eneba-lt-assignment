@@ -10,6 +10,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use App\Support\Log;
 
 /**
  * Applies one named limit to a route. The subject is the signed-in user when the route is behind AuthMiddleware (limits that protect
@@ -34,7 +35,12 @@ final class RateLimitMiddleware implements MiddlewareInterface
         $subject = $this->perUser && is_array($user)
             ? 'u' . $user['id']
             : ClientIp::from($request, $this->trustedProxies);
-        ($this->limiter)()->hit($this->bucket, $subject, $this->limit, $this->windowSeconds);
+        try {
+            ($this->limiter)()->hit($this->bucket, $subject, $this->limit, $this->windowSeconds);
+        } catch (\App\Exceptions\ApiException $e) {
+            Log::warn('security.rate_limited', 'too many requests: answered 429', ['bucket' => $this->bucket, 'subject' => $subject]);
+            throw $e;
+        }
 
         return $handler->handle($request);
     }

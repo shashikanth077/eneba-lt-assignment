@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Repositories\HealthRepository;
+use App\Support\Log;
 
 final class HealthService
 {
@@ -25,10 +26,15 @@ final class HealthService
         try {
             $this->lifecycle->expireDue();
         } catch (\Throwable $e) {
-            error_log('[health] could not release expired reservations: ' . $e->getMessage());
+            Log::warn('health.sweep_failed', 'could not release expired reservations', ['error' => $e]);
         }
 
         // "empty" explains a store whose lists are all empty although everything answers 200; it does not make the service unhealthy.
-        return ['status' => 'ok', 'db' => 'ok', 'stock' => $this->health->hasAvailableKeys() ? 'ok' : 'empty'];
+        $stock = $this->health->hasAvailableKeys() ? 'ok' : 'empty';
+        if ($stock === 'empty') {
+            Log::warn('health.stock.empty', 'NO game key is available: every game shows Out of stock (seed the database, docs/KEYS.md)');
+        }
+
+        return ['status' => 'ok', 'db' => 'ok', 'stock' => $stock];
     }
 }

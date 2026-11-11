@@ -12,6 +12,7 @@ use App\Repositories\OrderRepository;
 use App\Support\Transaction;
 use PDO;
 use Throwable;
+use App\Support\Log;
 
 /**
  * Applies verified Stripe events. The rules that make it safe to be called twice, late, or out of order:
@@ -73,7 +74,7 @@ final class PaymentEventService
     {
         $order = $this->lockOrder($intent);
         if ($order === null) {
-            error_log('[webhook] payment ' . ($intent['id'] ?? '?') . ' succeeded but belongs to no order');
+            Log::warn('payment.unknown_order', 'a payment succeeded at Stripe but belongs to no order of ours', ['intent' => $intent['id'] ?? '?']);
 
             return 'unknown_order'; // e.g. `stripe trigger payment_intent.succeeded`: a real payment we did not create
         }
@@ -99,6 +100,8 @@ final class PaymentEventService
 
         $this->orders->markPaid($order['id']);
         $this->cart->removeOffers($order['user_id'], array_column($items, 'offer_id')); // what was bought leaves the cart
+
+        Log::info('payment.paid', 'order paid, keys sold', ['order_id' => $order['id'], 'user_id' => $order['user_id'], 'total_cents' => $order['total_cents']]);
 
         return 'paid';
     }
@@ -142,6 +145,7 @@ final class PaymentEventService
      */
     private function giveUp(array $order, string $reason, array &$afterCommit): string
     {
+        Log::error('payment.refund_needed', 'money was received but the order cannot be delivered: refunding', ['order_id' => $order['id'], 'reason' => $reason, 'intent' => $order['stripe_payment_intent_id'] ?? '?']);
         $this->keys->releaseAll($order['id']);
         $this->orders->setStatus($order['id'], OrderStatus::REFUND_NEEDED, $reason);
         $intentId = (string) $order['stripe_payment_intent_id'];
@@ -150,8 +154,9 @@ final class PaymentEventService
             try {
                 $this->gateway->refund($intentId);
                 $this->orders->setStatus($orderId, OrderStatus::REFUNDED, 'refunded_automatically');
+                Log::warn('payment.refunded', 'the payment was refunded automatically', ['order_id' => $orderId]);
             } catch (Throwable $e) {
-                error_log("[webhook] order $orderId needs a manual refund: " . $e->getMessage());
+                Log::error('payment.refund_failed', 'the automatic refund FAILED: this order needs a manual refund in the Stripe dashboard', ['order_id' => $orderId, 'intent' => $intentId, 'error' => $e]);
             }
         };
 

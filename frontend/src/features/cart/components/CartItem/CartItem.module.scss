@@ -85,3 +85,13 @@
   text-align: right;
   font-weight: 800;
 }
+
+// the cart panel is narrow: name and seller on top, quantity, price and remove underneath
+.compact .row {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+
+  > :first-child {
+    grid-column: 1 / -1;
+  }
+}
