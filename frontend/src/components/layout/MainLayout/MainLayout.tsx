@@ -32,7 +32,11 @@ export function MainLayout() {
           <Navigation />
         </>
       )}
-      <main id="main" tabIndex={-1} className={`${styles.main} ${showVerificationBanner ? styles.withBanner : ''}`}>
+      <main
+        id="main"
+        tabIndex={-1}
+        className={`${styles.main} ${showVerificationBanner ? styles.withBanner : ''}`}
+      >
         <PageContainer>
           {showVerificationBanner && <VerifyEmailBanner />}
           <Outlet />
