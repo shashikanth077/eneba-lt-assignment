@@ -104,3 +104,11 @@ Send each of the three e-mails (registration, verification, order confirmation) 
 - [ ] Order e-mail: totals align on the right; no key anywhere; "View My Orders" opens the right order after sign-in.
 - [ ] Verification link: opens `/verify-email`, works once, second use shows the "invalid, expired or used" message; expired link refused.
 - [ ] Spam folder: not there after the first test (verify the sending domain's SPF/DKIM in the mail provider).
+
+## "The recipients address is empty" (checked in P35)
+
+The code passes the signed-in account's own address in every request (`to_email`, plus the aliases `email` and `user_email`), for the welcome e-mail,
+the verification e-mail (API, REST) and the order confirmation. An address that is empty or malformed is refused **before** calling EmailJS
+(`email.invalid` in the browser, `mail.verification.invalid_recipient` on the API) and is never logged. If EmailJS itself still answers
+"The recipients address is empty", the dashboard template is the cause: open the template, **Settings tab**, and make *To email* exactly
+`{{to_email}}` (a literal address or a different variable name leaves it empty). Do this for BOTH templates.

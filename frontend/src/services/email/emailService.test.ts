@@ -123,6 +123,33 @@ describe('registration e-mail (AUTH template)', () => {
   });
 });
 
+describe('recipient address', () => {
+  it('is the account address in to_email and its aliases, for both templates', async () => {
+    configure();
+    await sendRegistrationEmail({ user });
+    expect((send.mock.calls.at(-1) as unknown as string[])[1]).toBe('tpl_auth');
+    for (const name of ['to_email', 'email', 'user_email']) {
+      expect(lastParams()[name]).toBe('ana@example.com');
+    }
+    await sendOrderConfirmationEmail({ order, user });
+    expect((send.mock.calls.at(-1) as unknown as string[])[1]).toBe('tpl_order');
+    for (const name of ['to_email', 'email', 'user_email']) {
+      expect(lastParams()[name]).toBe('ana@example.com');
+    }
+  });
+
+  it('refuses a malformed address without calling EmailJS and without logging it', async () => {
+    configure();
+    const result = await sendOrderConfirmationEmail({
+      order,
+      user: { email: 'not-an-address', displayName: 'Ana' },
+    });
+    expect(result).toEqual({ status: 'invalid', missing: ['to_email'] });
+    expect(send).not.toHaveBeenCalled();
+    expect(JSON.stringify(report.mock.calls)).not.toContain('not-an-address');
+  });
+});
+
 describe('verification e-mail (same AUTH template, sent by the server)', () => {
   it('asks the API to send it: no token ever exists in the browser, and EmailJS is not called here', async () => {
     configure();
@@ -157,6 +184,7 @@ describe('order confirmation e-mail (ORDER template)', () => {
         'currency',
         'current_year',
         'discount',
+        'email',
         'order_date',
         'order_details_url',
         'order_items',
@@ -169,6 +197,7 @@ describe('order confirmation e-mail (ORDER template)', () => {
         'to_email',
         'to_name',
         'total_amount',
+        'user_email',
       ].sort(),
     );
     expect(params).toMatchObject({

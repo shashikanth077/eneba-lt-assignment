@@ -19,6 +19,10 @@ export function missingValues(values: Record<string, string>): string[] {
     .map(([name]) => name);
 }
 
+/** A deliberately simple shape check (something@host.tld, no spaces): the server and EmailJS do the real validation. */
+export const looksLikeEmail = (value: string): boolean =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
 export const isHttpUrl = (value: string): boolean => {
   try {
     const { protocol } = new URL(value);

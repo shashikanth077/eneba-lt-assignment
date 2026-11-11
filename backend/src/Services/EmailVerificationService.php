@@ -27,6 +27,11 @@ final class EmailVerificationService
     /** Creates a fresh token for the user (older unused ones stop working) and e-mails the link. Never throws for delivery problems. */
     public function sendTo(int $userId, string $email, string $displayName): bool
     {
+        if (filter_var(trim($email), FILTER_VALIDATE_EMAIL) === false) {
+            Log::error('mail.verification.invalid_recipient', 'verification e-mail NOT sent: the account has no valid e-mail address', ['user_id' => $userId]);
+
+            return false;
+        }
         $base = rtrim((string) $this->settings['app_url'], '/');
         if (!str_starts_with($base, 'https://') && !ConfigGuard::isLocal($this->settings)) {
             Log::error('mail.verification.skipped', 'verification e-mail NOT sent: APP_URL must start with https:// outside local development', ['user_id' => $userId, 'app_url' => $base]);
