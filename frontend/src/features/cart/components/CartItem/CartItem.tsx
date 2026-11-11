@@ -6,18 +6,28 @@ import { describeApiError } from '../../../../services/api/apiErrorHandler';
 import type { CartIssue, CartLine } from '../../../../types/api.types';
 import { formatCurrency } from '../../../../utils/formatCurrency';
 import { MAX_QTY_PER_LINE } from '../../../../utils/constants';
+import { classNames } from '../../../../utils/classNames';
 import { removeLineRequest, selectLineState, setQuantityRequest } from '../../cartSlice';
 import styles from './CartItem.module.scss';
 
 /** One cart row. The server allows 1-5 of an offer; the + button also stops at the stock that exists. */
-export function CartItem({ line, issue }: { line: CartLine; issue?: CartIssue }) {
+export function CartItem({
+  line,
+  issue,
+  compact = false,
+}: {
+  line: CartLine;
+  issue?: CartIssue;
+  /** The narrow cart panel: the name gets its own row, the controls sit under it. */
+  compact?: boolean;
+}) {
   const dispatch = useAppDispatch();
   const state = useAppSelector(selectLineState(line.offerId));
   const busy = state?.pending ?? false;
   const max = Math.max(1, Math.min(MAX_QTY_PER_LINE, line.available));
 
   return (
-    <li className={styles.item}>
+    <li className={classNames(styles.item, compact && styles.compact)}>
       <div className={styles.layout}>
         <img
           src={`/api/images/products/${line.productSlug}.svg`}

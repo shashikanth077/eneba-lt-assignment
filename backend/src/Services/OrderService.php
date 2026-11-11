@@ -105,6 +105,12 @@ final class OrderService
      */
     private function confirmWithProvider(string $paymentIntentId): void
     {
+        if ($this->gateway instanceof \App\Payment\UnconfiguredPaymentGateway) {
+            // no Stripe key on this server: checkout already logged `checkout.payments.unconfigured` (error); not once more per poll
+            Log::debug('payment.sync.skipped', 'cannot ask Stripe: STRIPE_SECRET_KEY is not set', ['intent' => $paymentIntentId]);
+
+            return;
+        }
         try {
             $intent = $this->gateway->retrieveIntent($paymentIntentId);
             if ($intent['status'] !== 'succeeded') {
