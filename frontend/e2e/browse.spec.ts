@@ -22,7 +22,7 @@ test('a visitor browses, opens the Categories panel, filters, opens a game and i
     await card.getByRole('link', { name: 'View offers' }).click();
     await expect(page).toHaveURL(/\/product\//);
     await page.goBack();
-    await page.locator('article').first().locator('a[tabindex="-1"]').click({ force: true }); // the cover itself is a link too
+    await page.locator('article').first().locator('img').click({ force: true }); // the cover itself is a link too
     await expect(page).toHaveURL(/\/product\//);
     await page.goto('/store');
   });
