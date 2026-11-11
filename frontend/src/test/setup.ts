@@ -1,8 +1,10 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach } from 'vitest';
 
 afterEach(() => cleanup());
+
+configure({ asyncUtilTimeout: 5000 });
 
 // RTK Query builds `new Request('/api/...')`. Browsers resolve that against the page; Node's Request needs an absolute URL.
 const NativeRequest = globalThis.Request;
